@@ -1,35 +1,48 @@
 import requests
 import os
 import json
-import time # For rate limiting/backoff
-from google import genai # Import the Gemini library
 
-# --- Configuration ---
-# Qloo API Key: It's highly recommended to set this as an environment variable.
-# For example: export QLOO_API_KEY='your_qloo_api_key_here'
-QLOO_API_KEY = os.getenv('QLOO_API_KEY',"rZ4JDgPEmJBGYuLtY233M_l0Jxm0QdLXFs6N-6XYaA0")
-QLOO_URL = "https://hackathon.api.qloo.com/v2/insights"
+# --- Qloo API Configuration ---
+API_KEY = os.getenv('QLOO_API_KEY', 'rZ4JDgPEmJBGYuLtY233M_l0Jxm0QdLXFs6N-6XYaA0') # Ensure this is your actual Qloo API Key
+URL = "https://hackathon.api.qloo.com/v2/insights"
 
-# Gemini LLM Configuration: It's highly recommended to set this as an environment variable.
-# For example: export GEMINI_API_KEY='your_gemini_api_key_here'
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY',"AIzaSyBw-AY9QEtfecfEoskdoPoos_vse3lL9ws")
-GEMINI_MODEL = "gemini-2.5-flash" # Using a fast model for this task
-
-# --- Initialize Clients ---
-qloo_headers = {
+headers = {
     "accept": "application/json",
-    "X-Api-Key": QLOO_API_KEY
+    "X-Api-Key": API_KEY
 }
 
-try:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-except Exception as e:
-    print(f"Error initializing Gemini client. Ensure GEMINI_API_KEY environment variable is set. Error: {e}")
-    gemini_client = None
-
-
 # --- Helper Function for Qloo API Request ---
-def _make_qloo_request(city_name, country_code, limit, signal_tags=None, signal_weight=1.0, max_retries=3):
+def get_brands(city_name, country_code, limit, signal_tags=None, signal_weight=1.0):
+    """
+    Helper function to make the API request.
+    """
+    params = {
+        "filter.type": "urn:entity:brand",
+        "filter.location.query": city_name,
+        "filter.geocode.country_code": country_code,
+        "take": limit,
+    }
+    if signal_tags:
+        if isinstance(signal_tags, str) and ',' in signal_tags:
+            params["signal.interests.tags"] = signal_tags.split(',')
+        else:
+            params["signal.interests.tags"] = signal_tags
+        params["signal.interests.tags.weight"] = signal_weight
+
+    try:
+        response = requests.get(URL, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Error making Qloo API request: {e}")
+        return None
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from Qloo API response: {response.text}")
+        return None
+
+# (get_places function remains the same, so it's omitted for brevity)
+def get_places(city_name, country_code, limit, signal_tags=None, signal_weight=1.0, max_retries=3):
     """
     Helper function to make the Qloo API request with basic retry logic.
     """
@@ -51,7 +64,7 @@ def _make_qloo_request(city_name, country_code, limit, signal_tags=None, signal_
 
     for attempt in range(max_retries):
         try:
-            response = requests.get(QLOO_URL, headers=qloo_headers, params=params)
+            response = requests.get(URL, headers=headers, params=params)
             response.raise_for_status() # Raise an HTTPError for bad responses (4xx or 5xx)
             data = response.json()
             return data
@@ -86,53 +99,61 @@ def _make_qloo_request(city_name, country_code, limit, signal_tags=None, signal_
                 print("Max retries reached for Qloo API request.")
                 return None
     return None # Return None if all retries fail
-
-
-# --- LLM-based General Business Insight Generation (Called Once) ---
-def get_general_business_insights_from_llm(place_data_list, city_name, country_code):
+# --- CORRECTED FORMATTING FUNCTION ---
+def format_brands_output(api_data):
     """
-    Uses an LLM to generate general business environment and opportunity insights
-    based on a list of places, called once.
+    Formats the JSON response from the get_brands function into a readable string.
+    This version is updated to handle the new API response structure.
     """
-    if gemini_client is None:
-        return "Gemini client not initialized. Cannot generate LLM insights."
+    if not api_data:
+        return "API response is empty."
 
-    if not place_data_list:
-        return "No place data provided to generate general insights."
+    # Safely get the list of entities from response['results']['entities']
+    # .get('results', {}) returns an empty dict if 'results' is not found
+    entities_list = api_data.get('results', {}).get('entities')
 
-    # Concatenate relevant information from the first few places for context
-    # Adjust this logic based on how much info you want to feed the LLM for 'general' insight
-    context_info = []
-    for i, place in enumerate(place_data_list[:5]): # Use up to the first 5 places for context
-        name = place.get('name', 'N/A')
-        description = place.get('properties', {}).get('description', 'No description available.')
-        tags_names = [tag.get('name', 'N/A') for tag in place.get('tags', [])]
-        keywords = [kw.get('name', 'N/A') for kw in place.get('properties', {}).get('keywords', [])]
-        context_info.append(f"Place {i+1}:\n  Name: {name}\n  Description: {description}\n  Tags: {', '.join(tags_names)}\n  Keywords: {', '.join(keywords)}\n")
+    # Check if the entities list exists and is not empty
+    if not entities_list:
+        return "No brand data found in the API response."
 
-    full_context = "\n".join(context_info)
-
-    prompt = f"""
-Given the characteristics of places found in {city_name}, {country_code}, which include:
-
-{full_context}
-
-What are some general types of businesses or opportunities that are likely to be profitable in an area with these kinds of establishments? Focus on what can make money for a new business owner or investor.
-
-Provide a concise, general overview of the business environment and then list specific, actionable business ideas that are common or trending around such places.
-"""
+    output_parts = []
+    
+    # Try to create a header with the location name from the response
     try:
-        response = gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt
+        # The location info is in the same place as before
+        location_info = api_data['query']['localities']['filter'][0]
+        location_name = location_info.get('name', 'Unknown Location')
+        header = f"===== Brand Recommendations for {location_name} ====="
+        output_parts.append(header)
+    except (KeyError, IndexError, TypeError):
+        output_parts.append("===== Brand Recommendations =====")
+
+    # Loop through each brand in the now correctly located entities_list
+    for i, brand in enumerate(entities_list):
+        name = brand.get('name', 'N/A')
+        
+        popularity_score = brand.get('popularity', 0)
+        popularity_percent = f"{popularity_score * 100:.2f}%"
+
+        properties = brand.get('properties', {})
+        description = properties.get('short_description', 'No description available.')
+        image_url = properties.get('image', {}).get('url', 'No image URL.')
+
+        tags_list = brand.get('tags', [])
+        tag_names = [tag.get('name') for tag in tags_list if tag.get('name')]
+        tags_str = ", ".join(tag_names) if tag_names else "No tags"
+
+        brand_str = (
+            f"--- {i+1}. {name} ---\n"
+            f"  - Popularity: {popularity_percent}\n"
+            f"  - Description: {description}\n"
+            f"  - Tags: {tags_str}\n"
+            f"  - Image URL: {image_url}"
         )
-        return response.text
-    except Exception as e:
-        print(f"Error generating general LLM insights for {city_name}: {e}")
-        return "Could not generate general business insights (LLM error)."
+        output_parts.append(brand_str)
 
+    return "\n\n".join(output_parts)
 
-# --- Formatted Place Data Function (without per-place LLM calls) ---
 def get_formatted_place_data(city_name, country_code, limit=20):
     """
     Makes a Qloo API call for general 'place' entities and formats their details
@@ -140,7 +161,7 @@ def get_formatted_place_data(city_name, country_code, limit=20):
     """
     print(f"\n--- Fetching Raw Places for {city_name}, {country_code} (Limit: {limit}) ---")
 
-    data = _make_qloo_request(city_name, country_code, limit)
+    data = get_places(city_name, country_code, limit) # Use the new get_places helper
 
     formatted_outputs = []
     all_places_raw_data = [] # To store raw data for general LLM call
@@ -187,41 +208,6 @@ def get_formatted_place_data(city_name, country_code, limit=20):
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
-
-    # --- Fetch and Process Data ---
-    all_formatted_place_details = []
-    all_raw_place_data = [] # Collect raw data for the general LLM call
-
-    target_city = "Birmingham"
-    target_country = "GB"
-    fetch_limit = 50 # Can fetch more places now since no per-place LLM call
-
-    # Get formatted place details and all raw place data
-    formatted_details, raw_data = get_formatted_place_data(target_city, target_country, limit=fetch_limit)
-    all_formatted_place_details.extend(formatted_details)
-    all_raw_place_data.extend(raw_data)
-
-    # --- Generate General Business Insights (Once per run) ---
-    print(f"\n--- Generating General Business Insights for {target_city}, {target_country} (Using LLM Once) ---")
-    general_llm_insights = get_general_business_insights_from_llm(all_raw_place_data, target_city, target_country)
-    print(general_llm_insights)
-    # Prepend general insights to the list of outputs
-    overall_output = [f"### General Business Insights for {target_city}, {target_country} ###\n"]
-    overall_output.append(general_llm_insights)
-    overall_output.append("\n" + "=" * 50 + "\n")
-    overall_output.extend(all_formatted_place_details)
-
-
-    # --- Save to File ---
-    output_filename = 'output_general_llm_insight.json'
-    try:
-        with open(output_filename, 'w') as f:
-            json.dump(overall_output, f, indent=4)
-        print(f"\nAll formatted place data with general LLM insight saved to {output_filename}")
-    except IOError as e:
-        print(f"Error saving data to {output_filename}: {e}")
-
-    # --- Print to Console ---
-    # print("\n--- Consolidated Output (also saved to output_general_llm_insight.json) ---")
-    # for item in overall_output:
-    #     print(item)
+    formatted_places, raw_places = get_formatted_place_data("London", "GB", limit=5)
+    for place_output in formatted_places:
+        print(place_output)
