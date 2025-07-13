@@ -99,7 +99,7 @@ def get_places(city_name, country_code, limit, signal_tags=None, signal_weight=1
                 print("Max retries reached for Qloo API request.")
                 return None
     return None # Return None if all retries fail
-# --- CORRECTED FORMATTING FUNCTION ---
+    
 def format_brands_output(api_data):
     """
     Formats the JSON response from the get_brands function into a readable string.
@@ -205,9 +205,20 @@ def get_formatted_place_data(city_name, country_code, limit=20):
         formatted_outputs.append("-" * 30) # Separator
 
     return formatted_outputs, all_places_raw_data
-
+    
 # --- Main Execution Block ---
 if __name__ == "__main__":
     formatted_places, raw_places = get_formatted_place_data("London", "GB", limit=5)
     for place_output in formatted_places:
         print(place_output)
+
+    # Get brand data for Birmingham
+    # birmingham_data = get_brands("birmingham", "GB", limit=50)
+
+    # # Check if we got data back before trying to format it
+    # if birmingham_data:
+    #     # Use the corrected function to format the output
+    #     formatted_output = format_brands_output(birmingham_data)
+    #     print(formatted_output)
+    # else:
+    #     print("Could not retrieve brand data.")
