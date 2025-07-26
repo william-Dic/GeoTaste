@@ -1,0 +1,15 @@
+get_brands - 
+This function makes a GET request to the Qloo API to fetch brand entities for a given city and country. It allows optional filtering by signal tags and signal weight, and prints debug information about the request and response. It returns the raw API response data or None if an error occurs.
+
+get_places - 
+This function makes a GET request to the Qloo API to fetch place entities for a given city and country, with optional filtering by signal tags and signal weight. It includes retry logic with exponential backoff for handling network or HTTP errors, and prints debug information about the request and response. It returns the raw API response data or None if all retries fail.
+
+format_brands_output - 
+This function takes the JSON response from get_brands and formats it into a human-readable string. It extracts brand details such as name, popularity, description, tags, and image URL, and organizes them into a structured output. It handles cases where the response is empty or missing expected fields.
+
+get_formatted_place_data - 
+This function calls get_places to fetch place entities from the Qloo API and formats their details into a list of readable strings. It extracts and formats information such as name, ID, address, rating, description, tags, and keywords for each place. It returns both the formatted outputs and the raw place data for further use. 
+
+get_location_tag_insights - 
+This function fetches tag (taste) insights for a specified city and country code from the Qloo API. It constructs the appropriate headers and parameters for the API request, sends a GET request to the Qloo insights endpoint, and returns the parsed JSON response as a dictionary. If an error occurs during the request, it prints an error message and returns None. 
+

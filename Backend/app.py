@@ -1,9 +1,14 @@
-from flask import Flask, request, jsonify
+import matplotlib
+matplotlib.use('Agg')
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import json
 import os
 import uuid
 from visualizations import QlooVisualizer
+import io
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -66,6 +71,68 @@ def generate_visualizations():
     except Exception as e:
         print(f"[{request_id}] ❌ Exception: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualizations/place_ratings_image', methods=['POST'])
+def place_ratings_image():
+    data = request.get_json()
+    city = data.get('city')
+    country = data.get('country')
+    limit = data.get('limit', 20)
+    visualizer = QlooVisualizer()
+    from qloo_analysis import get_brands, get_places
+    raw_brands = get_brands(city, country, limit)
+    raw_places = get_places(city, country, limit)
+    visualizer.set_data(raw_brands, raw_places)
+    ratings = []
+    if visualizer.places_data and 'results' in visualizer.places_data and 'entities' in visualizer.places_data['results']:
+        for place in visualizer.places_data['results']['entities']:
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating')
+            if rating and rating != 'N/A':
+                try:
+                    ratings.append(float(rating))
+                except (ValueError, TypeError):
+                    continue
+    if not ratings:
+        # Return a blank image with a message
+        plt.figure(figsize=(6, 4))
+        plt.text(0.5, 0.5, 'No ratings data available', ha='center', va='center', fontsize=16)
+        plt.axis('off')
+    else:
+        plt.figure(figsize=(6, 4))
+        sns.histplot(ratings, bins=10, kde=True, color='#4ECDC4')
+        plt.title(f'Place Ratings Distribution in {city}')
+        plt.xlabel('Rating')
+        plt.ylabel('Number of Places')
+        plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close()
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
+@app.route('/api/visualizations/place_ratings_data', methods=['POST'])
+def place_ratings_data():
+    data = request.get_json()
+    city = data.get('city')
+    country = data.get('country')
+    limit = data.get('limit', 20)
+    visualizer = QlooVisualizer()
+    from qloo_analysis import get_brands, get_places
+    raw_brands = get_brands(city, country, limit)
+    raw_places = get_places(city, country, limit)
+    visualizer.set_data(raw_brands, raw_places)
+    ratings = []
+    if visualizer.places_data and 'results' in visualizer.places_data and 'entities' in visualizer.places_data['results']:
+        for place in visualizer.places_data['results']['entities']:
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating')
+            if rating and rating != 'N/A':
+                try:
+                    ratings.append(float(rating))
+                except (ValueError, TypeError):
+                    continue
+    return jsonify({'ratings': ratings})
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
