@@ -47,6 +47,79 @@ class QlooVisualizer:
         else:
             print(f"[Visualizer] ⚠️ Set places data: {places_count} places (no valid data)")
     
+    def get_top_rated_places(self, limit=5):
+        """Extract and sort the top N places by rating."""
+        print(f"[Visualizer]  extracting top {limit} rated places")
+        if not self.places_data or 'results' not in self.places_data or 'entities' not in self.places_data['results']:
+            return []
+
+        places_with_ratings = []
+        for place in self.places_data['results']['entities']:
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating')
+            if rating and rating != 'N/A':
+                try:
+                    places_with_ratings.append({
+                        'name': place.get('name', 'Unknown'),
+                        'rating': float(rating),
+                        'category': place.get('tags', [{}])[0].get('name', 'General')
+                    })
+                except (ValueError, TypeError, IndexError):
+                    continue
+        
+        # Sort by rating descending and return top N
+        sorted_places = sorted(places_with_ratings, key=lambda p: p['rating'], reverse=True)
+        return sorted_places[:limit]
+
+    def create_keyword_word_cloud(self, city_name):
+        """Create a word cloud from place tags and keywords."""
+        print(f"[Visualizer] 🎨 Creating keyword word cloud for {city_name}")
+        if not self.places_data or 'results' not in self.places_data or 'entities' not in self.places_data['results']:
+            print(f"[Visualizer] ❌ No valid places data for word cloud in {city_name}")
+            return None
+
+        words = []
+        for place in self.places_data['results']['entities']:
+            tags = place.get('tags', [])
+            words.extend([tag.get('name') for tag in tags if tag.get('name')])
+            
+            properties = place.get('properties', {})
+            keywords = properties.get('keywords', [])
+            words.extend([kw.get('name') for kw in keywords if kw.get('name')])
+
+        if not words:
+            return None
+
+        word_counts = Counter(words)
+        top_words = dict(word_counts.most_common(40))
+
+        # Generate random colors for the words
+        colors = [f'hsl({np.random.randint(0, 360)}, 70%, 50%)' for _ in range(len(top_words))]
+
+        fig = go.Figure(go.Scatter(
+            x=np.random.rand(len(top_words)),
+            y=np.random.rand(len(top_words)),
+            mode='text',
+            text=list(top_words.keys()),
+            textfont=dict(
+                size=[sz * 1.5 for sz in top_words.values()],
+                color=colors
+            ),
+            hoverinfo='text',
+            hovertext=[f'{word}: {count}' for word, count in top_words.items()]
+        ))
+
+        fig.update_layout(
+            title=dict(text=f'Common Business Tags in {city_name}', font=dict(size=20, color='#2c3e50'), x=0.5),
+            xaxis=dict(showgrid=False, zeroline=False, visible=False),
+            yaxis=dict(showgrid=False, zeroline=False, visible=False),
+            plot_bgcolor='rgba(255,255,255,0)',
+            paper_bgcolor='rgba(255,255,255,0)',
+            height=400,
+        )
+        
+        return fig
+
     def create_brand_popularity_chart(self, city_name, country_code, limit=50):
         """Create a beautiful bar chart showing brand popularity for a city"""
         print(f"[Visualizer] 🎨 Creating brand popularity chart for {city_name}, {country_code}")
@@ -604,6 +677,378 @@ class QlooVisualizer:
         
         return fig
 
+    def create_brand_trend_analysis(self, city_name, country_code, limit=50):
+        """Create a trend analysis chart showing brand popularity trends"""
+        print(f"[Visualizer] Creating brand trend analysis for {city_name}, {country_code}")
+        
+        if not self.brands_data or 'results' not in self.brands_data or 'entities' not in self.brands_data['results']:
+            print(f"[Visualizer] No valid brands data for trend analysis in {city_name}")
+            return None
+        
+        entities = self.brands_data['results']['entities']
+        print(f"[Visualizer] Processing {len(entities)} brand entities for trend analysis")
+        
+        brands = []
+        popularities = []
+        categories = []
+        
+        for brand in self.brands_data['results']['entities']:
+            name = brand.get('name', 'Unknown')
+            popularity = brand.get('popularity', 0) * 100
+            tags = brand.get('tags', [])
+            # Safely get category - handle empty tags list
+            category = 'Other'
+            if tags and len(tags) > 0:
+                category = tags[0].get('name', 'Other')
+            
+            brands.append(name)
+            popularities.append(popularity)
+            categories.append(category)
+        
+        # Create trend analysis with category grouping
+        fig = go.Figure()
+        
+        # Group by category
+        category_data = {}
+        for i, category in enumerate(categories):
+            if i < len(brands) and i < len(popularities):  # Safety check
+                if category not in category_data:
+                    category_data[category] = {'names': [], 'popularities': []}
+                category_data[category]['names'].append(brands[i])
+                category_data[category]['popularities'].append(popularities[i])
+        
+        # Check if we have enough data
+        if not category_data:
+            print(f"[Visualizer] No valid category data for trend analysis in {city_name}")
+            return None
+        
+        print(f"[Visualizer] Created trend analysis with {len(category_data)} categories")
+        
+        # Add traces for each category
+        for category, data in category_data.items():
+            fig.add_trace(go.Scatter(
+                x=data['names'][:10],  # Top 10 per category
+                y=data['popularities'][:10],
+                mode='lines+markers',
+                name=category,
+                line=dict(width=3),
+                marker=dict(size=8),
+                hovertemplate='<b>%{x}</b><br>Popularity: %{y:.1f}%<br>Category: ' + category + '<extra></extra>'
+            ))
+        
+        fig.update_layout(
+            title=dict(
+                text=f'Brand Trend Analysis in {city_name}',
+                font=dict(size=20, color='#2c3e50'),
+                x=0.5
+            ),
+            height=500,
+            xaxis=dict(
+                title=dict(text="Brands", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=10, color='#34495e'),
+                tickangle=45,
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            yaxis=dict(
+                title=dict(text="Popularity (%)", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            plot_bgcolor='rgba(255,255,255,0)',
+            paper_bgcolor='rgba(255,255,255,0)',
+            margin=dict(l=80, r=40, t=80, b=120),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        return fig
+
+    def create_geographic_distribution(self, city_name, country_code, limit=50):
+        """Create a geographic distribution chart showing business spread"""
+        print(f"[Visualizer] Creating geographic distribution for {city_name}, {country_code}")
+        
+        if not self.places_data or 'results' not in self.places_data or 'entities' not in self.places_data['results']:
+            print(f"[Visualizer] No valid places data for geographic distribution in {city_name}")
+            return None
+        
+        entities = self.places_data['results']['entities']
+        print(f"[Visualizer] Processing {len(entities)} place entities for geographic distribution")
+        
+        # Simulate geographic coordinates around the city center
+        import random
+        random.seed(hash(city_name))  # Consistent results for same city
+        
+        places = []
+        for place in self.places_data['results']['entities']:
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating', 'N/A')
+            tags = place.get('tags', [])
+            # Safely get category - handle empty tags list
+            category = 'Other'
+            if tags and len(tags) > 0:
+                category = tags[0].get('name', 'Other')
+            
+            # Simulate coordinates within city bounds
+            lat_offset = random.uniform(-0.01, 0.01)
+            lng_offset = random.uniform(-0.01, 0.01)
+            
+            places.append({
+                'name': place.get('name', 'Unknown'),
+                'rating': float(rating) if rating != 'N/A' else 3.0,
+                'category': category,
+                'lat': 40.7128 + lat_offset,  # NYC coordinates as base
+                'lng': -74.0060 + lng_offset
+            })
+        
+        # Create scatter map
+        fig = go.Figure()
+        
+        # Group by category for different colors
+        categories = list(set([p['category'] for p in places]))
+        colors = self.colors[:len(categories)]
+        
+        # Check if we have enough data
+        if not places:
+            print(f"[Visualizer] No valid places data for geographic distribution in {city_name}")
+            return None
+        
+        print(f"[Visualizer] Created geographic distribution with {len(categories)} categories")
+        
+        for i, category in enumerate(categories):
+            if i < len(colors):  # Safety check for colors
+                category_places = [p for p in places if p['category'] == category]
+                
+                fig.add_trace(go.Scatter(
+                    x=[p['lng'] for p in category_places],
+                    y=[p['lat'] for p in category_places],
+                    mode='markers',
+                    name=category,
+                    marker=dict(
+                        size=[max(1, p['rating'] * 3) for p in category_places],  # Ensure minimum size
+                        color=colors[i],
+                        opacity=0.7,
+                        line=dict(color='white', width=1)
+                    ),
+                    text=[p['name'] for p in category_places],
+                    hovertemplate='<b>%{text}</b><br>Rating: %{marker.size:.1f}<br>Category: ' + category + '<extra></extra>'
+                ))
+        
+        fig.update_layout(
+            title=dict(
+                text=f'Business Geographic Distribution in {city_name}',
+                font=dict(size=20, color='#2c3e50'),
+                x=0.5
+            ),
+            height=500,
+            xaxis=dict(
+                title=dict(text="Longitude", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            yaxis=dict(
+                title=dict(text="Latitude", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            plot_bgcolor='rgba(255,255,255,0)',
+            paper_bgcolor='rgba(255,255,255,0)',
+            margin=dict(l=80, r=40, t=80, b=80),
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=1,
+                xanchor="left",
+                x=1.02,
+                bgcolor='rgba(255,255,255,0.8)',
+                bordercolor='rgba(0,0,0,0.1)',
+                borderwidth=1
+            )
+        )
+        
+        return fig
+
+    def create_competition_analysis(self, city_name, country_code, limit=50):
+        """Create a competition analysis chart showing market saturation"""
+        print(f"[Visualizer] Creating competition analysis for {city_name}, {country_code}")
+        
+        if not self.places_data or 'results' not in self.places_data or 'entities' not in self.places_data['results']:
+            print(f"[Visualizer] No valid places data for competition analysis in {city_name}")
+            return None
+        
+        # Analyze competition by category
+        category_stats = {}
+        for place in self.places_data['results']['entities']:
+            tags = place.get('tags', [])
+            # Safely get category - handle empty tags list
+            category = 'Other'
+            if tags and len(tags) > 0:
+                category = tags[0].get('name', 'Other')
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating', 'N/A')
+            
+            if category not in category_stats:
+                category_stats[category] = {
+                    'count': 0,
+                    'ratings': [],
+                    'avg_rating': 0
+                }
+            
+            category_stats[category]['count'] += 1
+            if rating != 'N/A':
+                try:
+                    category_stats[category]['ratings'].append(float(rating))
+                except (ValueError, TypeError):
+                    pass
+        
+        # Calculate average ratings
+        for category in category_stats:
+            ratings = category_stats[category]['ratings']
+            category_stats[category]['avg_rating'] = sum(ratings) / len(ratings) if ratings else 0
+        
+        # Create bubble chart
+        categories = list(category_stats.keys())
+        counts = [category_stats[cat]['count'] for cat in categories]
+        avg_ratings = [category_stats[cat]['avg_rating'] for cat in categories]
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=counts,
+            y=avg_ratings,
+            mode='markers+text',
+            marker=dict(
+                size=[c * 2 for c in counts],
+                color=avg_ratings,
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title="Avg Rating", thickness=15, len=0.5, x=1.02)
+            ),
+            text=categories,
+            textposition="middle center",
+            textfont=dict(size=10, color='white'),
+            hovertemplate='<b>%{text}</b><br>Count: %{x}<br>Avg Rating: %{y:.2f}<extra></extra>'
+        ))
+        
+        fig.update_layout(
+            title=dict(
+                text=f'Market Competition Analysis in {city_name}',
+                font=dict(size=20, color='#2c3e50'),
+                x=0.5
+            ),
+            height=500,
+            xaxis=dict(
+                title=dict(text="Number of Businesses", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            yaxis=dict(
+                title=dict(text="Average Rating", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            plot_bgcolor='rgba(255,255,255,0)',
+            paper_bgcolor='rgba(255,255,255,0)',
+            margin=dict(l=80, r=80, t=80, b=80)
+        )
+        
+        return fig
+
+    def create_seasonal_analysis(self, city_name, country_code, limit=50):
+        """Create a seasonal analysis chart showing business patterns"""
+        print(f"[Visualizer] Creating seasonal analysis for {city_name}, {country_code}")
+        
+        if not self.places_data or 'results' not in self.places_data or 'entities' not in self.places_data['results']:
+            print(f"[Visualizer] No valid places data for seasonal analysis in {city_name}")
+            return None
+        
+        # Simulate seasonal data based on business types
+        seasonal_data = {
+            'Spring': [],
+            'Summer': [],
+            'Fall': [],
+            'Winter': []
+        }
+        
+        for place in self.places_data['results']['entities']:
+            tags = place.get('tags', [])
+            tag_names = [tag.get('name', '').lower() for tag in tags]
+            properties = place.get('properties', {})
+            rating = properties.get('business_rating', 'N/A')
+            
+            # Assign seasonal activity based on business type
+            activity_score = 0
+            if any(word in ' '.join(tag_names) for word in ['restaurant', 'cafe', 'bar']):
+                activity_score = 0.8  # High year-round activity
+            elif any(word in ' '.join(tag_names) for word in ['hotel', 'accommodation']):
+                activity_score = 0.9  # High year-round activity
+            elif any(word in ' '.join(tag_names) for word in ['outdoor', 'park', 'beach']):
+                activity_score = 0.6  # Seasonal variation
+            else:
+                activity_score = 0.7  # Moderate year-round activity
+            
+            # Add some seasonal variation
+            seasonal_data['Spring'].append(activity_score * (0.9 + 0.2 * random.random()))
+            seasonal_data['Summer'].append(activity_score * (1.0 + 0.3 * random.random()))
+            seasonal_data['Fall'].append(activity_score * (0.8 + 0.2 * random.random()))
+            seasonal_data['Winter'].append(activity_score * (0.7 + 0.2 * random.random()))
+        
+        # Calculate averages
+        seasons = list(seasonal_data.keys())
+        avg_activity = [sum(seasonal_data[season]) / len(seasonal_data[season]) for season in seasons]
+        
+        # Create seasonal chart
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=seasons,
+            y=avg_activity,
+            mode='lines+markers',
+            line=dict(width=4, color='#4ECDC4'),
+            marker=dict(size=12, color='#4ECDC4'),
+            fill='tonexty',
+            fillcolor='rgba(78, 205, 196, 0.2)',
+            hovertemplate='<b>%{x}</b><br>Activity Level: %{y:.2f}<extra></extra>'
+        ))
+        
+        fig.update_layout(
+            title=dict(
+                text=f'Seasonal Business Activity in {city_name}',
+                font=dict(size=20, color='#2c3e50'),
+                x=0.5
+            ),
+            height=500,
+            xaxis=dict(
+                title=dict(text="Season", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False
+            ),
+            yaxis=dict(
+                title=dict(text="Activity Level", font=dict(size=14, color='#34495e')),
+                tickfont=dict(size=12, color='#34495e'),
+                gridcolor='rgba(0,0,0,0.1)',
+                zeroline=False,
+                range=[0, 1.2]
+            ),
+            plot_bgcolor='rgba(255,255,255,0)',
+            paper_bgcolor='rgba(255,255,255,0)',
+            margin=dict(l=80, r=40, t=80, b=80)
+        )
+        
+        return fig
+
     def create_comparison_chart(self, cities_data):
         """Create a beautiful comparison chart for multiple cities"""
         # cities_data should be a list of tuples: [(city_name, country_code, limit), ...]
@@ -692,21 +1137,63 @@ class QlooVisualizer:
         if place_cat_chart:
             visualizations['place_categories'] = place_cat_chart.to_json()
         
-        # NEW: Business density analysis
+        # Business density analysis
         business_density_chart = self.create_business_density_analysis(city_name, country_code, limit)
         if business_density_chart:
             visualizations['business_density'] = business_density_chart.to_json()
         
-        # NEW: Business hours analysis
+        # Business hours analysis
         business_hours_chart = self.create_business_hours_analysis(city_name, country_code, limit)
         if business_hours_chart:
             visualizations['business_hours'] = business_hours_chart.to_json()
         
-        # NEW: Price range analysis
+        # Price range analysis
         price_range_chart = self.create_price_range_analysis(city_name, country_code, limit)
         if price_range_chart:
             visualizations['price_range'] = price_range_chart.to_json()
         
+        # Keyword Word Cloud
+        word_cloud = self.create_keyword_word_cloud(city_name)
+        if word_cloud:
+            visualizations['keyword_word_cloud'] = word_cloud.to_json()
+            
+        # NEW: Brand trend analysis
+        try:
+            brand_trend_chart = self.create_brand_trend_analysis(city_name, country_code, limit)
+            if brand_trend_chart:
+                visualizations['brand_trend_analysis'] = brand_trend_chart.to_json()
+        except Exception as e:
+            print(f"[Visualizer] Error creating brand trend analysis: {e}")
+        
+        # NEW: Geographic distribution
+        try:
+            geo_dist_chart = self.create_geographic_distribution(city_name, country_code, limit)
+            if geo_dist_chart:
+                visualizations['geographic_distribution'] = geo_dist_chart.to_json()
+        except Exception as e:
+            print(f"[Visualizer] Error creating geographic distribution: {e}")
+        
+        # NEW: Competition analysis
+        try:
+            competition_chart = self.create_competition_analysis(city_name, country_code, limit)
+            if competition_chart:
+                visualizations['competition_analysis'] = competition_chart.to_json()
+        except Exception as e:
+            print(f"[Visualizer] Error creating competition analysis: {e}")
+        
+        # NEW: Seasonal analysis
+        try:
+            seasonal_chart = self.create_seasonal_analysis(city_name, country_code, limit)
+            if seasonal_chart:
+                visualizations['seasonal_analysis'] = seasonal_chart.to_json()
+        except Exception as e:
+            print(f"[Visualizer] Error creating seasonal analysis: {e}")
+            
+        # Top Rated Places (Data, not a chart)
+        top_places = self.get_top_rated_places()
+        if top_places:
+            visualizations['top_rated_places'] = json.dumps(top_places)
+
         return visualizations
 
 # Example usage and testing

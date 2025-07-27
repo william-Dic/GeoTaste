@@ -1,83 +1,151 @@
 import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { styled } from '@mui/material/styles';
-import { Paper, Typography, Grid, Box, CircularProgress } from '@mui/material';
+import { 
+  Paper, 
+  Typography, 
+  Grid, 
+  Box, 
+  CircularProgress, 
+  Tabs, 
+  Tab, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  ListItemAvatar, 
+  Avatar,
+  Card,
+  CardContent,
+  Divider,
+  Chip,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import BusinessIcon from '@mui/icons-material/Business';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import HotelIcon from '@mui/icons-material/Hotel';
+import AttractionsIcon from '@mui/icons-material/Attractions';
+import InfoIcon from '@mui/icons-material/Info';
+
+const TabPanel = (props) => {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
+
+const DashboardContainer = styled(Box)(({ isCompact }) => ({
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: isCompact ? 16 : 20,
+  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+  border: '1px solid rgba(255, 255, 255, 0.25)',
+  overflow: 'hidden',
+  height: isCompact ? 'calc(100vh - 140px)' : '100%',
+  width: isCompact ? '600px' : '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}));
+
+const DashboardHeader = styled(Box)(({ isCompact }) => ({
+  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  color: 'white',
+  padding: isCompact ? '16px' : '20px',
+  textAlign: 'center',
+  position: 'relative',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+    opacity: 0.3,
+  }
+}));
+
+const StatsCard = styled(Card)(({ theme, isCompact }) => ({
+  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+  backdropFilter: 'blur(10px)',
+  borderRadius: 16,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  transition: 'all 0.3s ease',
+  height: isCompact ? '100px' : '120px',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+  }
+}));
 
 const VisualizationContainer = styled(Paper)(({ theme, isCompact }) => ({
   padding: isCompact ? theme.spacing(2) : theme.spacing(3),
   margin: isCompact ? theme.spacing(1) : theme.spacing(2),
   backgroundColor: 'rgba(255, 255, 255, 0.98)',
-  backdropFilter: 'blur(18px)',
-  borderRadius: isCompact ? 16 : 20,
+  backdropFilter: 'blur(10px)',
+  borderRadius: 16,
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  transition: 'all 0.3s ease',
+  maxWidth: isCompact ? 500 : 600,
+  height: isCompact ? '400px' : '500px',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+  }
+}));
+
+const ChartContainer = styled(Box)(({ theme }) => ({
+  width: '100%',
+  height: '320px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const TopPlacesContainer = styled(Paper)({
+  padding: '20px',
+  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+  borderRadius: '16px',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
   border: '1px solid rgba(255, 255, 255, 0.25)',
-  minWidth: isCompact ? 320 : 400,
-  maxWidth: isCompact ? 400 : 500,
-  height: isCompact ? '320px' : '450px',
-  transition: 'all 0.3s cubic-bezier(.25,.8,.25,1)',
+});
+
+const CategoryChip = styled(Chip)(({ theme }) => ({
+  margin: theme.spacing(0.5),
+  backgroundColor: 'rgba(78, 205, 196, 0.1)',
+  color: '#4a6fa5',
+  border: '1px solid rgba(78, 205, 196, 0.3)',
   '&:hover': {
-    transform: isCompact ? 'translateY(-2px)' : 'translateY(-4px) scale(1.01)',
-    boxShadow: isCompact ? '0 12px 40px rgba(0, 0, 0, 0.15)' : '0 24px 64px rgba(0, 0, 0, 0.22)',
-  },
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'stretch',
-  overflow: 'hidden',
-}));
-
-const ChartContainer = styled(Box)(({ theme, isCompact }) => ({
-  height: isCompact ? '220px' : '320px',
-  width: '100%',
-  marginBottom: theme.spacing(1),
-  borderRadius: isCompact ? 10 : 14,
-  overflow: 'hidden',
-  position: 'relative',
-  flex: 1,
-  '& .js-plotly-plot': {
-    width: '100% !important',
-    height: '100% !important',
-  },
-  '& .plotly': {
-    width: '100% !important',
-    height: '100% !important',
-  },
-  '& .plot-container': {
-    width: '100% !important',
-    height: '100% !important',
-  },
-}));
-
-const TitleContainer = styled(Box)(({ theme, isCompact }) => ({
-  textAlign: 'center',
-  marginBottom: isCompact ? theme.spacing(1) : theme.spacing(2),
-  padding: isCompact ? theme.spacing(1.5) : theme.spacing(2),
-  background: 'linear-gradient(135deg, rgba(74, 111, 165, 0.1) 0%, rgba(74, 111, 165, 0.05) 100%)',
-  borderRadius: isCompact ? 12 : 16,
-  backdropFilter: 'blur(12px)',
-  border: '1px solid rgba(74, 111, 165, 0.1)',
-}));
-
-const CardHeader = styled(Typography)(({ theme, isCompact }) => ({
-  fontWeight: 700,
-  fontSize: isCompact ? '1rem' : '1.2rem',
-  color: '#26324B',
-  marginBottom: theme.spacing(0.5),
-  letterSpacing: 0.2,
-  lineHeight: 1.2,
-}));
-
-const CardSub = styled(Typography)(({ theme, isCompact }) => ({
-  color: '#7f8c8d',
-  fontSize: isCompact ? '0.75rem' : '0.9rem',
-  marginBottom: isCompact ? theme.spacing(0.5) : theme.spacing(1),
-  fontStyle: 'italic',
-  lineHeight: 1.3,
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+  }
 }));
 
 const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady }) => {
   const [visualizations, setVisualizations] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
   useEffect(() => {
     if (!cityName || !countryCode) return;
@@ -85,7 +153,6 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
     const generateVisualizations = async () => {
       setLoading(true);
       setError(null);
-      // Clear old visualizations immediately when starting new search
       setVisualizations(null);
 
       try {
@@ -114,7 +181,6 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
         const data = await response.json();
         setVisualizations(data);
         
-        // Notify parent that visualizations are ready
         if (onReady) {
           onReady();
         }
@@ -126,7 +192,6 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
         }
         console.error('Error generating visualizations:', err);
         
-        // Notify parent even on error
         if (onReady) {
           onReady();
         }
@@ -139,7 +204,8 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
 
   if (loading) {
     return (
-      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight={isCompact ? "200px" : "400px"}>
+      <DashboardContainer isCompact={isCompact}>
+        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" flex={1}>
         <CircularProgress size={isCompact ? 40 : 60} sx={{ color: '#4ECDC4' }} />
         <Typography variant={isCompact ? "body1" : "h6"} sx={{ color: '#4a6fa5', mt: 2, textAlign: 'center' }}>
           Generating Business Insights...
@@ -151,12 +217,14 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
           This may take up to 30 seconds
         </Typography>
       </Box>
+      </DashboardContainer>
     );
   }
 
   if (error) {
     return (
-      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight={isCompact ? "200px" : "400px"}>
+      <DashboardContainer isCompact={isCompact}>
+        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" flex={1}>
         <Typography variant={isCompact ? "body1" : "h6"} sx={{ color: '#e74c3c', textAlign: 'center', mb: 2 }}>
           Error: {error}
         </Typography>
@@ -164,6 +232,7 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
           Please try searching for a different city or check your connection.
         </Typography>
       </Box>
+      </DashboardContainer>
     );
   }
 
@@ -241,8 +310,8 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
     },
     dragmode: false,
     hovermode: 'closest',
-    height: isCompact ? 220 : 320,
-    width: isCompact ? 320 : 400,
+    height: isCompact ? 200 : 300,
+    width: isCompact ? 300 : 500,
   });
 
   const renderCard = (header, subtitle, chartData, hideLegend = false) => {
@@ -251,8 +320,19 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
       const plotData = JSON.parse(chartData);
       return (
         <VisualizationContainer isCompact={isCompact}>
-          <CardHeader isCompact={isCompact}>{header}</CardHeader>
-          <CardSub isCompact={isCompact}>{subtitle}</CardSub>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="h6" sx={{ color: '#26324B', fontWeight: 600, fontSize: isCompact ? '0.9rem' : '1.1rem' }}>
+              {header}
+            </Typography>
+            <Tooltip title={subtitle}>
+              <IconButton size="small">
+                <InfoIcon fontSize="small" sx={{ color: '#4a6fa5' }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Typography variant="caption" sx={{ color: '#7f8c8d', mb: 2, display: 'block' }}>
+            {subtitle}
+          </Typography>
           <ChartContainer isCompact={isCompact}>
             <Plot
               data={plotData.data}
@@ -273,83 +353,138 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
     }
   };
 
-  return (
-    <Box sx={{ flexGrow: 1, p: isCompact ? 1 : 2, overflow: 'auto', maxHeight: 'calc(100vh - 140px)' }}>
-      <TitleContainer isCompact={isCompact}>
-        <Typography variant={isCompact ? "h6" : "h4"} gutterBottom sx={{
-          color: '#4a6fa5',
-          fontWeight: 700,
-          textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          mb: 1,
-          fontSize: isCompact ? '1.1rem' : '1.5rem'
-        }}>
-          {isCompact ? `Business Insights` : `Business Insights for ${cityName}`}
-        </Typography>
-        <Typography variant={isCompact ? "body2" : "h6"} sx={{
-          color: 'rgba(74, 111, 165, 0.8)',
-          fontWeight: 400,
-          fontSize: isCompact ? '0.8rem' : '1rem'
-        }}>
-          {isCompact ? `Discover the business landscape` : `Discover the business landscape and brand preferences`}
-        </Typography>
-      </TitleContainer>
+  const topRatedPlaces = visualizations.top_rated_places ? JSON.parse(visualizations.top_rated_places) : [];
 
-      <Grid container spacing={isCompact ? 1 : 2} justifyContent="center" alignItems="stretch">
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Business Quality vs. Categories',
-            'How business diversity relates to ratings',
-            visualizations.business_density,
-            true
-          )}
+  // Calculate summary statistics
+  const totalPlaces = topRatedPlaces.length;
+  const avgRating = totalPlaces > 0 ? (topRatedPlaces.reduce((sum, place) => sum + place.rating, 0) / totalPlaces).toFixed(1) : 0;
+  const topRating = totalPlaces > 0 ? Math.max(...topRatedPlaces.map(p => p.rating)).toFixed(1) : 0;
+  const categories = [...new Set(topRatedPlaces.map(p => p.category))].length;
+
+  const getCategoryIcon = (category) => {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes('restaurant') || lowerCategory.includes('food')) return <RestaurantIcon />;
+    if (lowerCategory.includes('hotel') || lowerCategory.includes('accommodation')) return <HotelIcon />;
+    if (lowerCategory.includes('shop') || lowerCategory.includes('retail')) return <ShoppingCartIcon />;
+    if (lowerCategory.includes('attraction') || lowerCategory.includes('museum')) return <AttractionsIcon />;
+    return <BusinessIcon />;
+  };
+
+  return (
+    <DashboardContainer isCompact={isCompact}>
+      <DashboardHeader isCompact={isCompact}>
+        <Typography variant={isCompact ? "h5" : "h4"} sx={{ fontWeight: 700, mb: 1, position: 'relative', zIndex: 1 }}>
+          {isCompact ? 'Business Dashboard' : `Business Dashboard - ${cityName}`}
+        </Typography>
+        <Typography variant="body1" sx={{ opacity: 0.9, position: 'relative', zIndex: 1 }}>
+          {isCompact ? 'Comprehensive business insights' : `Comprehensive business insights for ${cityName}, ${countryCode}`}
+        </Typography>
+      </DashboardHeader>
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: 'rgba(255, 255, 255, 0.95)' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          centered
+          sx={{
+            '& .MuiTab-root': {
+              fontWeight: 600,
+              color: '#4a6fa5',
+              '&.Mui-selected': {
+                color: '#667eea',
+              }
+            }
+          }}
+        >
+          <Tab label="Business Environment" />
+          <Tab label="Category Analysis" />
+          <Tab label="Local Taste" />
+        </Tabs>
+      </Box>
+
+      <Box sx={{ flex: 1, overflow: 'auto', backgroundColor: 'rgba(248, 250, 252, 0.8)' }}>
+      <TabPanel value={tabValue} index={0}>
+          {/* Business Environment Overview */}
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+              <Typography variant="h5" sx={{ color: '#26324B', mb: 3, textAlign: 'center' }}>
+                Business Environment Overview
+              </Typography>
+            </Grid>
+            
+            {/* Main Business Category Analysis */}
+            <Grid item xs={12}>
+              {renderCard('Business Category Analysis', 'Types of businesses and their distribution', visualizations.place_categories)}
+            </Grid>
+            
+            {/* Environment Charts */}
+            <Grid item xs={12} md={6}>
+              {renderCard('Business Activity Patterns', 'When businesses are most active throughout the day', visualizations.business_hours, true)}
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Seasonal Business Analysis', 'Business activity patterns across seasons', visualizations.seasonal_analysis, true)}
+            </Grid>
+
+            {/* Geographic and Quality Overview */}
+            <Grid item xs={12} md={6}>
+              {renderCard('Geographic Distribution', 'Spatial distribution of businesses by category', visualizations.geographic_distribution, true)}
+          </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Quality Assessment', 'Distribution of business ratings and quality', visualizations.place_ratings, true)}
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Business Activity Patterns',
-            'When businesses are most active',
-            visualizations.business_hours,
-            true
-          )}
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={1}>
+          {/* Business Category Analysis */}
+        <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="h5" sx={{ color: '#26324B', mb: 3, textAlign: 'center' }}>
+                Business Category Analysis
+              </Typography>
+            </Grid>
+            
+            {/* Category Deep Dive */}
+            <Grid item xs={12} md={6}>
+              {renderCard('Business Quality vs. Categories', 'How business diversity relates to ratings', visualizations.business_density, true)}
+          </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Price Range Distribution', 'Affordability spectrum of local businesses', visualizations.price_range)}
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Category Performance Metrics', 'Detailed analysis of category performance', visualizations.place_ratings, true)}
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Price Range Distribution',
-            'Affordability spectrum of local businesses',
-            visualizations.price_range
-          )}
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={2}>
+          {/* Local People Taste */}
+        <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="h5" sx={{ color: '#26324B', mb: 3, textAlign: 'center' }}>
+                Local People Taste & Preferences
+              </Typography>
+            </Grid>
+            
+            {/* Brand Preferences */}
+            <Grid item xs={12} md={6}>
+              {renderCard('Brand Popularity Ranking', 'Most popular brands in this city', visualizations.brand_popularity, true)}
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Brand Category Distribution', 'Distribution of brand types and industries', visualizations.brand_categories)}
+            </Grid>
+            
+            {/* Trend Analysis */}
+            <Grid item xs={12} md={6}>
+              {renderCard('Brand Trend Analysis', 'Popularity trends across brand categories', visualizations.brand_trend_analysis, true)}
+          </Grid>
+            <Grid item xs={12} md={6}>
+              {renderCard('Local Keywords & Interests', 'Most common business keywords and tags', visualizations.keyword_word_cloud, true)}
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Place Categories',
-            'Types of businesses in the area',
-            visualizations.place_categories
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Place Ratings Distribution',
-            'Quality assessment of local businesses',
-            visualizations.place_ratings,
-            true
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Brand Popularity',
-            'Most popular brands in this city',
-            visualizations.brand_popularity,
-            true
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={6} lg={3} xl={3} display="flex">
-          {renderCard(
-            'Brand Categories',
-            'Distribution of brand types',
-            visualizations.brand_categories
-          )}
-        </Grid>
-      </Grid>
+      </TabPanel>
     </Box>
+    </DashboardContainer>
   );
 };
 

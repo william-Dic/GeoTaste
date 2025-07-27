@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { styled } from '@mui/material/styles';
 import Map from './components/Map';
 import SearchBar from './components/SearchBar';
 import DataVisualizations from './components/DataVisualizations';
-import { styled } from '@mui/material/styles';
+import BusinessAnalysisPanel from './components/BusinessAnalysisPanel';
 
 const AppContainer = styled('div')({
   position: 'relative',
@@ -23,53 +24,52 @@ const TopContainer = styled('div')({
   gap: '10px',
 });
 
-const FloatingVisualizationPanel = styled('div')({
+const AnalysisLayout = styled('div')({
   position: 'absolute',
   top: '100px',
+  left: '20px',
   right: '20px',
-  width: '450px',
-  maxHeight: 'calc(100vh - 140px)',
+  bottom: '20px',
+  display: 'flex',
+  gap: '20px',
+  zIndex: 2,
+  justifyContent: 'space-between',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  transform: 'translateX(0)',
+  '&.hidden': {
+    transform: 'translateX(100%)',
+  },
+});
+
+const LeftPanel = styled('div')({
+  width: '45%',
   backgroundColor: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(20px)',
   borderRadius: '20px',
   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
   border: '1px solid rgba(255, 255, 255, 0.2)',
-  zIndex: 2,
   overflow: 'hidden',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  transform: 'translateX(0)',
-  '&.hidden': {
-    transform: 'translateX(470px)',
-  },
+  display: 'flex',
+  flexDirection: 'column',
 });
 
-const CloseButton = styled('button')({
-  position: 'absolute',
-  top: '15px',
-  right: '15px',
-  width: '30px',
-  height: '30px',
-  borderRadius: '50%',
-  border: 'none',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  color: '#333',
-  fontSize: '18px',
-  cursor: 'pointer',
+const RightPanel = styled('div')({
+  width: '55%',
+  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  backdropFilter: 'blur(20px)',
+  borderRadius: '20px',
+  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  overflow: 'hidden',
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 3,
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 1)',
-    transform: 'scale(1.1)',
-  },
+  flexDirection: 'column',
+  position: 'relative',
 });
 
 const MinimizeButton = styled('button')({
   position: 'absolute',
   top: '15px',
-  right: '55px',
+  right: '15px',
   width: '30px',
   height: '30px',
   borderRadius: '50%',
@@ -131,18 +131,24 @@ const AgentStatusIndicator = styled('div')({
 function App() {
   const [map, setMap] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
-  const [showVisualizations, setShowVisualizations] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [visualizationsReady, setVisualizationsReady] = useState(false);
+  const [gptAnalysisReady, setGptAnalysisReady] = useState(false);
   const mapRef = useRef(null);
 
   const handleSearchStart = () => {
+    console.log('[App] 🔍 Search started - resetting states');
     setIsAnalyzing(true);
+    setVisualizationsReady(false);
+    setGptAnalysisReady(false);
+    setShowAnalysis(false);
   };
 
   const handleCitySearch = (cityName, countryCode, cityCenter) => {
+    console.log(`[App] 🏙️ City search: ${cityName}, ${countryCode}`);
     setSelectedCity({ name: cityName, country: countryCode });
-    setShowVisualizations(true);
     setIsMinimized(false);
     
     // Start the GeoTaste Agent animation
@@ -151,10 +157,13 @@ function App() {
     }
   };
 
-  const handleCloseVisualizations = () => {
-    setShowVisualizations(false);
+  const handleCloseAnalysis = () => {
+    console.log('[App] ❌ Closing analysis');
+    setShowAnalysis(false);
     setSelectedCity(null);
     setIsAnalyzing(false);
+    setVisualizationsReady(false);
+    setGptAnalysisReady(false);
     
     // Stop the agent animation
     if (mapRef.current) {
@@ -162,17 +171,36 @@ function App() {
     }
   };
 
-  const handleMinimizeVisualizations = () => {
-    setIsMinimized(!isMinimized);
-  };
-
   const handleVisualizationsReady = () => {
-    setIsAnalyzing(false);
+    console.log('[App] 📊 Visualizations ready');
+    setVisualizationsReady(true);
+    checkIfReadyToShow();
     
     // Stop the agent animation when visualizations are ready
     if (mapRef.current) {
       mapRef.current.stopAnalysisAnimation();
     }
+  };
+
+  const handleGptAnalysisReady = () => {
+    console.log('[App] 🤖 GPT Analysis ready');
+    setGptAnalysisReady(true);
+    checkIfReadyToShow();
+  };
+
+  const checkIfReadyToShow = () => {
+    console.log(`[App] 🔍 Checking if ready to show: viz=${visualizationsReady}, gpt=${gptAnalysisReady}`);
+    if (visualizationsReady && gptAnalysisReady) {
+      console.log('[App] ✅ Both ready - showing analysis panels');
+      setShowAnalysis(true);
+      setIsAnalyzing(false);
+    } else {
+      console.log(`[App] ⏳ Still waiting: viz=${visualizationsReady}, gpt=${gptAnalysisReady}`);
+    }
+  };
+
+  const handleMinimizeAnalysis = () => {
+    setIsMinimized(!isMinimized);
   };
 
   return (
@@ -199,22 +227,38 @@ function App() {
         </AgentStatusIndicator>
       )}
 
-      {showVisualizations && selectedCity && (
-        <FloatingVisualizationPanel className={isMinimized ? 'hidden' : ''}>
-          <CloseButton onClick={handleCloseVisualizations}>
-            ×
-          </CloseButton>
-          <MinimizeButton onClick={handleMinimizeVisualizations}>
+      {selectedCity && (
+        <AnalysisLayout 
+          className={isMinimized ? 'hidden' : ''} 
+          style={{ 
+            opacity: showAnalysis ? 1 : 0,
+            pointerEvents: showAnalysis ? 'auto' : 'none',
+            transition: 'opacity 0.5s ease-in-out'
+          }}
+        >
+          {/* Left Panel - Business Environment Analysis */}
+          <LeftPanel>
+            <BusinessAnalysisPanel 
+              cityName={selectedCity.name}
+              countryCode={selectedCity.country}
+              onAnalysisReady={handleGptAnalysisReady}
+            />
+          </LeftPanel>
+
+          {/* Right Panel - Data Visualizations */}
+          <RightPanel>
+            <MinimizeButton onClick={handleMinimizeAnalysis}>
             {isMinimized ? '□' : '−'}
           </MinimizeButton>
           <DataVisualizations
             key={`${selectedCity.name}-${selectedCity.country}`}
             cityName={selectedCity.name}
             countryCode={selectedCity.country}
-            isCompact={true}
+              isCompact={false}
             onReady={handleVisualizationsReady}
           />
-        </FloatingVisualizationPanel>
+          </RightPanel>
+        </AnalysisLayout>
       )}
     </AppContainer>
   );

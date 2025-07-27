@@ -4,6 +4,7 @@ import json
 import os
 import uuid
 from visualizations import QlooVisualizer
+from chatgpt_analysis import analyze_business_environment, get_chat_response
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -65,6 +66,68 @@ def generate_visualizations():
         return jsonify(viz_data)
     except Exception as e:
         print(f"[{request_id}] ❌ Exception: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/chatgpt-analysis', methods=['POST'])
+def chatgpt_analysis():
+    """Generate ChatGPT analysis of business environment"""
+    request_id = str(uuid.uuid4())[:8]
+    
+    try:
+        data = request.get_json()
+        city = data.get('city')
+        country = data.get('country')
+        limit = data.get('limit', 30)
+        
+        print(f"[{request_id}] 🤖 ChatGPT Analysis Request - City: {city}, Country: {country}, Limit: {limit}")
+        
+        # Generate business environment analysis
+        print(f"[{request_id}] 🔄 Calling analyze_business_environment...")
+        result = analyze_business_environment(city, country, limit)
+        
+        print(f"[{request_id}] 📊 Analysis result: {result}")
+        
+        if result.get("error"):
+            print(f"[{request_id}] ❌ ChatGPT Analysis Error: {result['error']}")
+            return jsonify({'error': result['error']}), 500
+        
+        print(f"[{request_id}] ✅ ChatGPT Analysis completed successfully")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"[{request_id}] 💥 ChatGPT Analysis Exception: {e}")
+        import traceback
+        print(f"[{request_id}] 💥 Full traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/chat-response', methods=['POST'])
+def chat_response():
+    """Get chat response from ChatGPT about business environment"""
+    request_id = str(uuid.uuid4())[:8]
+    
+    try:
+        data = request.get_json()
+        city = data.get('city')
+        country = data.get('country')
+        message = data.get('message')
+        
+        if not message:
+            return jsonify({'error': 'Message is required'}), 400
+        
+        print(f"[{request_id}] 💬 Chat Request - City: {city}, Country: {country}, Message: {message[:50]}...")
+        
+        # Get chat response
+        result = get_chat_response(message, city, country)
+        
+        if result.get("error"):
+            print(f"[{request_id}] ❌ Chat Response Error: {result['error']}")
+            return jsonify({'error': result['error']}), 500
+        
+        print(f"[{request_id}] ✅ Chat Response generated successfully")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"[{request_id}] ❌ Chat Response Exception: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
