@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import { styled } from '@mui/material/styles';
 import { InputBase, Paper, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import mapboxgl from 'mapbox-gl';
-import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
-
-const geocodingClient = mbxGeocoding({ accessToken: mapboxgl.accessToken });
 
 const SearchContainer = styled(Paper)(({ theme }) => ({
   borderRadius: 50,
@@ -28,46 +24,54 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 const SearchBar = ({ map, onCitySearch, onSearchStart }) => {
   const [query, setQuery] = useState('');
 
-  const handleSearch = () => {
-    if (!map || !query) return;
+  const handleSearch = async () => {
+    if (!query.trim()) return;
 
     // Notify parent that search is starting
     if (onSearchStart) {
       onSearchStart();
     }
 
-    geocodingClient
-      .forwardGeocode({
-        query: query,
-        limit: 1,
-      })
-      .send()
-      .then((response) => {
-        const match = response.body;
-        if (match && match.features && match.features.length) {
-          const { center, place_name, text } = match.features[0];
-          
-          // Extract city and country code robustly
-          let cityName = text;
-          let countryCode = 'US';
-          if (match.features[0].context) {
-            for (const ctx of match.features[0].context) {
-              if (ctx.id.startsWith('place')) cityName = ctx.text;
-              if (ctx.id.startsWith('country')) countryCode = ctx.short_code?.toUpperCase() || countryCode;
-            }
-          }
-          // Fallback to feature text if no context
-          if (!cityName) cityName = text;
-          
-          // Debug log
-          console.log('[SearchBar] Sending to backend:', cityName, countryCode);
-          
-          // Call the onCitySearch callback with the city name and country code
-          if (onCitySearch) {
-            onCitySearch(cityName, countryCode, center);
+    try {
+      // Use basic fetch instead of Mapbox SDK
+      const accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example';
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${accessToken}&limit=1`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0];
+        const { center, place_name, text } = feature;
+        
+        // Extract city and country code
+        let cityName = text;
+        let countryCode = 'US';
+        
+        if (feature.context) {
+          for (const ctx of feature.context) {
+            if (ctx.id.startsWith('place')) cityName = ctx.text;
+            if (ctx.id.startsWith('country')) countryCode = ctx.short_code?.toUpperCase() || countryCode;
           }
         }
-      });
+        
+        // Fallback to feature text if no context
+        if (!cityName) cityName = text;
+        
+        console.log('[SearchBar] Found location:', cityName, countryCode);
+        
+        // Call the onCitySearch callback
+        if (onCitySearch) {
+          onCitySearch(cityName, countryCode, center);
+        }
+      } else {
+        console.log('[SearchBar] No results found for:', query);
+        alert('No results found for this search. Please try a different city name.');
+      }
+    } catch (error) {
+      console.error('[SearchBar] Geocoding error:', error);
+      alert('Search failed. Please try again.');
+    }
   };
 
   return (
