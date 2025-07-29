@@ -47,7 +47,7 @@ def analyze_business_environment(city_name, country_code, limit=50):
         
         # Call ChatGPT using the correct API structure
         response = client.responses.create(
-            model="gpt-4.1",
+            model="gpt-4",
             input=prompt
         )
         
@@ -269,7 +269,7 @@ def get_chat_response(user_message, city_name, country_code):
 Provide a concise, professional response (100-150 words) that directly addresses the user's question using the business analysis above. If the question is outside the analysis scope, provide relevant business insights about {city_name}. Write in a professional tone suitable for business communications."""
         
         response = client.responses.create(
-            model="gpt-4.1",
+            model="gpt-4",
             input=context_prompt
         )
         
