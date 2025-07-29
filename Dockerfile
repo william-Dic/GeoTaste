@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files first for better caching
@@ -41,5 +42,23 @@ ENV PORT=5000
 # Expose port
 EXPOSE 5000
 
-# Use shell command to change directory and run Python
-CMD ["bash", "-c", "cd /app/Backend && python app.py"] 
+# Create a startup script with better error handling
+RUN echo '#!/bin/bash\n\
+echo "🚀 Starting GeoTaste application..."\n\
+echo "📁 Current directory: $(pwd)"\n\
+echo "📁 Backend directory contents:"\n\
+ls -la /app/Backend/\n\
+echo "🐍 Python version:"\n\
+python --version\n\
+echo "📦 Installed packages:"\n\
+pip list | grep -E "(flask|openai|requests|pandas|numpy|plotly|matplotlib|seaborn)"\n\
+echo "🔧 Environment variables:"\n\
+echo "PORT: $PORT"\n\
+echo "FLASK_APP: $FLASK_APP"\n\
+echo "FLASK_ENV: $FLASK_ENV"\n\
+echo "🌐 Starting Flask app..."\n\
+cd /app/Backend && python simple_app.py\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Use the startup script
+CMD ["/app/start.sh"] 

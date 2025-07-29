@@ -5,6 +5,7 @@ import os
 import uuid
 from visualizations import QlooVisualizer
 from chatgpt_analysis import analyze_business_environment, get_chat_response
+import sys
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app, origins=["*"])  # Enable CORS for all origins in production
@@ -157,13 +158,35 @@ def serve(path):
         return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    # Get port from environment variable or default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    print(f"🚀 Starting GeoTaste Flask app on port {port}")
-    print(f"🌐 Binding to 0.0.0.0:{port}")
-    print(f"📁 Static folder: {app.static_folder}")
-    print(f"🔧 Debug mode: {app.debug}")
-    print(f"🏥 Health check endpoint: /api/health")
-    
-    # Use 0.0.0.0 to bind to all available network interfaces
-    app.run(host='0.0.0.0', port=port, debug=False) 
+    try:
+        # Get port from environment variable or default to 5000
+        port = int(os.environ.get('PORT', 5000))
+        print(f"🚀 Starting GeoTaste Flask app on port {port}")
+        print(f"🌐 Binding to 0.0.0.0:{port}")
+        print(f"📁 Static folder: {app.static_folder}")
+        print(f"🔧 Debug mode: {app.debug}")
+        print(f"🏥 Health check endpoint: /api/health")
+        
+        # Check if static folder exists
+        if not os.path.exists(app.static_folder):
+            print(f"⚠️ Warning: Static folder {app.static_folder} does not exist!")
+        else:
+            print(f"✅ Static folder {app.static_folder} exists")
+            static_files = os.listdir(app.static_folder)
+            print(f"📄 Static files: {static_files[:5]}...")  # Show first 5 files
+        
+        # Check environment variables
+        print(f"🔑 Environment check:")
+        print(f"   QLOO_API_KEY: {'✅ Set' if os.environ.get('QLOO_API_KEY') else '❌ Missing'}")
+        print(f"   OPENAI_API_KEY: {'✅ Set' if os.environ.get('OPENAI_API_KEY') else '❌ Missing'}")
+        print(f"   MAPBOX_ACCESS_TOKEN: {'✅ Set' if os.environ.get('MAPBOX_ACCESS_TOKEN') else '❌ Missing'}")
+        
+        # Use 0.0.0.0 to bind to all available network interfaces
+        print(f"🌐 Starting Flask server...")
+        app.run(host='0.0.0.0', port=port, debug=False)
+        
+    except Exception as e:
+        print(f"❌ Failed to start Flask app: {e}")
+        import traceback
+        print(f"💥 Full traceback: {traceback.format_exc()}")
+        sys.exit(1) 
