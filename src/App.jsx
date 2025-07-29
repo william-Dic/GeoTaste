@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
 import Map from './components/Map';
 import SearchBar from './components/SearchBar';
 import DataVisualizations from './components/DataVisualizations';
 import BusinessAnalysisPanel from './components/BusinessAnalysisPanel';
+
+// Add debugging
+console.log('🚀 App.jsx is loading...');
 
 const AppContainer = styled('div')({
   position: 'relative',
@@ -129,6 +132,8 @@ const AgentStatusIndicator = styled('div')({
 });
 
 function App() {
+  console.log('🎯 App component is rendering...');
+  
   const [map, setMap] = useState(null);
   const [selectedCity, setSelectedCity] = useState(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -137,6 +142,15 @@ function App() {
   const [visualizationsReady, setVisualizationsReady] = useState(false);
   const [gptAnalysisReady, setGptAnalysisReady] = useState(false);
   const mapRef = useRef(null);
+
+  // Add useEffect for debugging
+  useEffect(() => {
+    console.log('✅ App component mounted successfully');
+    console.log('🔧 Environment check:');
+    console.log('  - Window location:', window.location.href);
+    console.log('  - User agent:', navigator.userAgent);
+    console.log('  - React version:', React.version);
+  }, []);
 
   const handleSearchStart = () => {
     console.log('[App] 🔍 Search started - resetting states');
@@ -203,6 +217,8 @@ function App() {
     setIsMinimized(!isMinimized);
   };
 
+  console.log('🎨 App component is about to render JSX...');
+  
   return (
     <AppContainer>
       <TopContainer>
