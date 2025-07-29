@@ -159,5 +159,11 @@ def serve(path):
 if __name__ == '__main__':
     # Get port from environment variable or default to 5000
     port = int(os.environ.get('PORT', 5000))
+    print(f"🚀 Starting GeoTaste Flask app on port {port}")
+    print(f"🌐 Binding to 0.0.0.0:{port}")
+    print(f"📁 Static folder: {app.static_folder}")
+    print(f"🔧 Debug mode: {app.debug}")
+    print(f"🏥 Health check endpoint: /api/health")
+    
     # Use 0.0.0.0 to bind to all available network interfaces
     app.run(host='0.0.0.0', port=port, debug=False) 
