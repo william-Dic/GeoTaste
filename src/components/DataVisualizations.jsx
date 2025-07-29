@@ -36,10 +36,13 @@ let Plotly = null;
 // Try to load Plotly dynamically
 const loadPlotly = async () => {
   try {
+    console.log('🔄 Loading Plotly...');
     const plotlyModule = await import('react-plotly.js');
     Plot = plotlyModule.default;
-    Plotly = await import('plotly.js');
+    const plotlyJs = await import('plotly.js');
+    Plotly = plotlyJs.default || plotlyJs;
     console.log('✅ Plotly loaded successfully');
+    return true;
   } catch (error) {
     console.error('❌ Failed to load Plotly:', error);
     // Fallback: create a simple div for charts
@@ -53,20 +56,42 @@ const loadPlotly = async () => {
           alignItems: 'center',
           justifyContent: 'center',
           border: '2px dashed #ccc',
-          borderRadius: '8px'
+          borderRadius: '8px',
+          flexDirection: 'column',
+          gap: '8px'
         }}
         {...props}
       >
         <Typography variant="body2" color="textSecondary">
           Chart loading... (Plotly temporarily unavailable)
         </Typography>
+        <Typography variant="caption" color="textSecondary">
+          Retrying connection...
+        </Typography>
       </div>
     );
+    return false;
   }
 };
 
-// Load Plotly on component mount
-loadPlotly();
+// Load Plotly on component mount with retry mechanism
+let plotlyLoaded = false;
+let retryCount = 0;
+const maxRetries = 3;
+
+const loadPlotlyWithRetry = async () => {
+  const success = await loadPlotly();
+  if (!success && retryCount < maxRetries) {
+    retryCount++;
+    console.log(`🔄 Retrying Plotly load (attempt ${retryCount}/${maxRetries})...`);
+    setTimeout(loadPlotlyWithRetry, 1000 * retryCount); // Exponential backoff
+  }
+  plotlyLoaded = success;
+  // Update global status for components to check
+  window.plotlyStatus = success ? 'loaded' : 'failed';
+};
+
+loadPlotlyWithRetry();
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;
@@ -180,10 +205,28 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [plotlyStatus, setPlotlyStatus] = useState('loading'); // 'loading', 'loaded', 'failed'
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  // Monitor Plotly loading status
+  useEffect(() => {
+    const checkPlotlyStatus = () => {
+      if (window.plotlyStatus) {
+        setPlotlyStatus(window.plotlyStatus);
+      }
+    };
+    
+    // Check immediately
+    checkPlotlyStatus();
+    
+    // Set up interval to check
+    const interval = setInterval(checkPlotlyStatus, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!cityName || !countryCode) return;
@@ -197,7 +240,7 @@ const DataVisualizations = ({ cityName, countryCode, isCompact = false, onReady 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        const response = await fetch('http://localhost:5000/api/visualizations', {
+        const response = await fetch('/api/visualizations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
