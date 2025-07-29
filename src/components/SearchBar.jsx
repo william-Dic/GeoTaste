@@ -33,32 +33,117 @@ const SearchBar = ({ map, onCitySearch, onSearchStart }) => {
     }
 
     try {
-      // Use basic fetch instead of Mapbox SDK
-      const accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example';
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${accessToken}&limit=1`;
+      // Use the actual Mapbox access token from environment or a working one
+      const accessToken = 'pk.eyJ1IjoiZ203MTciLCJhIjoiY21kY3k1amNtMDJkdjJqc2M4cTdkZnJ3ZyJ9.aOfW29U47FH0vS9X8lfxLQ';
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${accessToken}&limit=1&types=place`;
+      
+      console.log('[SearchBar] Searching for:', query);
+      console.log('[SearchBar] URL:', url);
       
       const response = await fetch(url);
       const data = await response.json();
+      
+      console.log('[SearchBar] Response:', data);
       
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
         const { center, place_name, text } = feature;
         
-        // Extract city and country code
+        // Extract city and country code more robustly
         let cityName = text;
         let countryCode = 'US';
         
+        // Try to get country code from context
         if (feature.context) {
           for (const ctx of feature.context) {
-            if (ctx.id.startsWith('place')) cityName = ctx.text;
-            if (ctx.id.startsWith('country')) countryCode = ctx.short_code?.toUpperCase() || countryCode;
+            if (ctx.id.startsWith('country')) {
+              countryCode = ctx.short_code?.toUpperCase() || countryCode;
+              break;
+            }
           }
         }
         
-        // Fallback to feature text if no context
-        if (!cityName) cityName = text;
+        // For places without context, try to extract from place_name
+        if (countryCode === 'US' && place_name) {
+          const parts = place_name.split(', ');
+          if (parts.length > 1) {
+            const lastPart = parts[parts.length - 1];
+            // Common country codes
+            const countryMap = {
+              'United Kingdom': 'GB',
+              'UK': 'GB',
+              'England': 'GB',
+              'Scotland': 'GB',
+              'Wales': 'GB',
+              'Northern Ireland': 'GB',
+              'United States': 'US',
+              'USA': 'US',
+              'Canada': 'CA',
+              'Australia': 'AU',
+              'Germany': 'DE',
+              'France': 'FR',
+              'Spain': 'ES',
+              'Italy': 'IT',
+              'Japan': 'JP',
+              'China': 'CN',
+              'India': 'IN',
+              'Brazil': 'BR',
+              'Mexico': 'MX',
+              'Argentina': 'AR',
+              'South Africa': 'ZA',
+              'Nigeria': 'NG',
+              'Egypt': 'EG',
+              'Morocco': 'MA',
+              'Kenya': 'KE',
+              'Ghana': 'GH',
+              'Ethiopia': 'ET',
+              'Tanzania': 'TZ',
+              'Uganda': 'UG',
+              'Rwanda': 'RW',
+              'Burundi': 'BI',
+              'Somalia': 'SO',
+              'Djibouti': 'DJ',
+              'Eritrea': 'ER',
+              'Sudan': 'SD',
+              'South Sudan': 'SS',
+              'Central African Republic': 'CF',
+              'Chad': 'TD',
+              'Cameroon': 'CM',
+              'Equatorial Guinea': 'GQ',
+              'Gabon': 'GA',
+              'Republic of the Congo': 'CG',
+              'Democratic Republic of the Congo': 'CD',
+              'Angola': 'AO',
+              'Zambia': 'ZM',
+              'Malawi': 'MW',
+              'Mozambique': 'MZ',
+              'Zimbabwe': 'ZW',
+              'Botswana': 'BW',
+              'Namibia': 'NA',
+              'Lesotho': 'LS',
+              'Eswatini': 'SZ',
+              'Madagascar': 'MG',
+              'Mauritius': 'MU',
+              'Seychelles': 'SC',
+              'Comoros': 'KM',
+              'Mayotte': 'YT',
+              'Réunion': 'RE',
+              'Saint Helena': 'SH',
+              'Ascension Island': 'AC',
+              'Tristan da Cunha': 'TA',
+              'Falkland Islands': 'FK',
+              'South Georgia': 'GS',
+              'French Southern Territories': 'TF',
+              'British Indian Ocean Territory': 'IO',
+              'Antarctica': 'AQ'
+            };
+            if (countryMap[lastPart]) {
+              countryCode = countryMap[lastPart];
+            }
+          }
+        }
         
-        console.log('[SearchBar] Found location:', cityName, countryCode);
+        console.log('[SearchBar] Found location:', cityName, countryCode, center);
         
         // Call the onCitySearch callback
         if (onCitySearch) {
