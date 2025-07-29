@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: geotaste
+    env: python
+    buildCommand: |
+      pip install -r Backend/requirements.txt
+      npm install
+      npm run build
+      mkdir -p Backend/static
+      cp -r dist/* Backend/static/
+    startCommand: cd Backend && python app.py
+    envVars:
+      - key: QLOO_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MAPBOX_ACCESS_TOKEN
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true 

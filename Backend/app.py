@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import json
 import os
@@ -6,8 +6,8 @@ import uuid
 from visualizations import QlooVisualizer
 from chatgpt_analysis import analyze_business_environment, get_chat_response
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+app = Flask(__name__, static_folder='static', static_url_path='')
+CORS(app, origins=["*"])  # Enable CORS for all origins in production
 
 @app.route('/api/visualizations', methods=['POST'])
 def generate_visualizations():
@@ -132,7 +132,32 @@ def chat_response():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'healthy'})
+    return jsonify({'status': 'healthy', 'service': 'GeoTaste API'})
+
+@app.route('/api', methods=['GET'])
+def api_root():
+    return jsonify({
+        'message': 'GeoTaste API is running',
+        'version': '1.0.0',
+        'endpoints': [
+            '/api/health',
+            '/api/visualizations',
+            '/api/chatgpt-analysis',
+            '/api/chat-response'
+        ]
+    })
+
+# Serve React app for all other routes
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    # Get port from environment variable or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    # Use 0.0.0.0 to bind to all available network interfaces
+    app.run(host='0.0.0.0', port=port, debug=False) 
