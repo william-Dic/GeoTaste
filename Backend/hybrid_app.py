@@ -26,6 +26,11 @@ def api_root():
         ]
     })
 
+@app.route('/test', methods=['GET'])
+def test_frontend():
+    """Serve the frontend test page"""
+    return send_from_directory('.', 'test_frontend.html')
+
 # Serve React app for all other routes
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

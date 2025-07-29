@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoTaste Frontend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        .info { background: rgba(33, 150, 243, 0.3); }
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        #results {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 GeoTaste Frontend Test</h1>
+        <p>Testing frontend functionality and API connectivity...</p>
+        
+        <div class="status info">
+            <strong>🔍 Testing API Connectivity...</strong>
+        </div>
+        
+        <button onclick="testAPI()">Test API Health</button>
+        <button onclick="testVisualizations()">Test Visualizations API</button>
+        <button onclick="testChatGPT()">Test ChatGPT API</button>
+        <button onclick="loadReactApp()">Load React App</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            results.textContent += `[${timestamp}] ${message}\n`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        async function testAPI() {
+            log('🔍 Testing API health endpoint...');
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                log(`✅ API Health: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ API Health Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testVisualizations() {
+            log('🔍 Testing visualizations endpoint...');
+            try {
+                const response = await fetch(`${API_BASE}/api/visualizations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        city: 'London',
+                        country: 'GB',
+                        limit: 5
+                    })
+                });
+                const data = await response.json();
+                log(`✅ Visualizations: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ Visualizations Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testChatGPT() {
+            log('🔍 Testing ChatGPT analysis endpoint...');
+            try {
+                const response = await fetch(`${API_BASE}/api/chatgpt-analysis`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        city: 'London',
+                        country: 'GB',
+                        limit: 5
+                    })
+                });
+                const data = await response.json();
+                log(`✅ ChatGPT Analysis: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ ChatGPT Analysis Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadReactApp() {
+            log('🔍 Loading React app assets...');
+            try {
+                // Test if React app assets are loading
+                const response = await fetch(`${API_BASE}/assets/index-DlNK5qz-.js`);
+                if (response.ok) {
+                    log('✅ React app assets are accessible');
+                } else {
+                    log('❌ React app assets not accessible', 'error');
+                }
+            } catch (error) {
+                log(`❌ React app assets error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            log('🚀 Page loaded, running tests...');
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html> 
