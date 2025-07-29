@@ -1,55 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { styled } from '@mui/material/styles';
 
 // Add debugging
 console.log('🚀 App.jsx is loading...');
 
-const AppContainer = styled('div')({
-  position: 'relative',
-  height: '100vh',
-  width: '100vw',
-  overflow: 'hidden',
-  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-});
-
-const TopContainer = styled('div')({
-  position: 'absolute',
-  top: '20px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  zIndex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '10px',
-});
-
-const TestUI = styled('div')({
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  background: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '20px',
-  padding: '40px',
-  textAlign: 'center',
-  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  maxWidth: '600px',
-});
-
 function App() {
   console.log('🎯 App component is rendering...');
   
-  const [map, setMap] = useState(null);
-  const [selectedCity, setSelectedCity] = useState(null);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-  const [visualizationsReady, setVisualizationsReady] = useState(false);
-  const [gptAnalysisReady, setGptAnalysisReady] = useState(false);
-  const mapRef = useRef(null);
+  const [testState, setTestState] = useState('Initial State');
 
   // Add useEffect for debugging
   useEffect(() => {
@@ -60,113 +17,152 @@ function App() {
     console.log('  - React version:', React.version);
   }, []);
 
-  const handleSearchStart = () => {
-    console.log('[App] 🔍 Search started - resetting states');
-    setIsAnalyzing(true);
-    setVisualizationsReady(false);
-    setGptAnalysisReady(false);
-    setShowAnalysis(false);
-  };
-
-  const handleCitySearch = (cityName, countryCode, cityCenter) => {
-    console.log(`[App] 🏙️ City search: ${cityName}, ${countryCode}`);
-    setSelectedCity({ name: cityName, country: countryCode });
-    setIsMinimized(false);
-    
-    // Start the GeoTaste Agent animation
-    if (mapRef.current) {
-      mapRef.current.startAnalysisAnimation(cityCenter, cityName);
-    }
-  };
-
-  const handleCloseAnalysis = () => {
-    console.log('[App] ❌ Closing analysis');
-    setShowAnalysis(false);
-    setSelectedCity(null);
-    setIsAnalyzing(false);
-    setVisualizationsReady(false);
-    setGptAnalysisReady(false);
-    
-    // Stop the agent animation
-    if (mapRef.current) {
-      mapRef.current.stopAnalysisAnimation();
-    }
-  };
-
-  const handleVisualizationsReady = () => {
-    console.log('[App] 📊 Visualizations ready');
-    setVisualizationsReady(true);
-    checkIfReadyToShow();
-    
-    // Stop the agent animation when visualizations are ready
-    if (mapRef.current) {
-      mapRef.current.stopAnalysisAnimation();
-    }
-  };
-
-  const handleGptAnalysisReady = () => {
-    console.log('[App] 🤖 GPT Analysis ready');
-    setGptAnalysisReady(true);
-    checkIfReadyToShow();
-  };
-
-  const checkIfReadyToShow = () => {
-    console.log(`[App] 🔍 Checking if ready to show: viz=${visualizationsReady}, gpt=${gptAnalysisReady}`);
-    if (visualizationsReady && gptAnalysisReady) {
-      console.log('[App] ✅ Both ready - showing analysis panels');
-      setShowAnalysis(true);
-      setIsAnalyzing(false);
-    } else {
-      console.log(`[App] ⏳ Still waiting: viz=${visualizationsReady}, gpt=${gptAnalysisReady}`);
-    }
-  };
-
-  const handleMinimizeAnalysis = () => {
-    setIsMinimized(!isMinimized);
-  };
-
   console.log('🎨 App component is about to render JSX...');
   
   return (
-    <AppContainer>
-      <TopContainer>
-        <h1 style={{ color: 'white', margin: 0 }}>🌍 GeoTaste</h1>
-        <p style={{ color: 'white', margin: 0 }}>AI Agentic Business Environment Consultant</p>
-      </TopContainer>
+    <div style={{
+      minHeight: '100vh',
+      width: '100vw',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'Arial, sans-serif',
+      color: 'white',
+      padding: '20px',
+      boxSizing: 'border-box'
+    }}>
+      {/* Header */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        zIndex: 10
+      }}>
+        <h1 style={{ 
+          color: 'white', 
+          margin: '0 0 10px 0',
+          fontSize: '2.5rem',
+          fontWeight: 'bold',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+        }}>
+          🌍 GeoTaste
+        </h1>
+        <p style={{ 
+          color: 'white', 
+          margin: 0,
+          fontSize: '1.2rem',
+          opacity: 0.9
+        }}>
+          AI Agentic Business Environment Consultant
+        </p>
+      </div>
 
-      <TestUI>
-        <h2>🎉 React App is Working!</h2>
-        <p>✅ App component loaded successfully</p>
-        <p>✅ Styled components working</p>
-        <p>✅ State management working</p>
+      {/* Main Content */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '20px',
+        padding: '40px',
+        textAlign: 'center',
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        maxWidth: '600px',
+        width: '100%',
+        color: '#333'
+      }}>
+        <h2 style={{
+          margin: '0 0 20px 0',
+          fontSize: '2rem',
+          color: '#667eea'
+        }}>
+          🎉 React App is Working!
+        </h2>
         
-        <div style={{ margin: '20px 0', padding: '15px', background: '#f0f0f0', borderRadius: '10px' }}>
-          <h3>Component Status:</h3>
-          <p>✅ App.jsx - Working</p>
-          <p>✅ Styled Components - Working</p>
-          <p>✅ React State - Working</p>
-          <p>✅ useEffect - Working</p>
+        <div style={{
+          margin: '20px 0',
+          padding: '15px',
+          background: '#f8f9fa',
+          borderRadius: '10px',
+          border: '2px solid #e9ecef'
+        }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#495057' }}>Component Status:</h3>
+          <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ App.jsx - Working</p>
+          <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ React State - Working</p>
+          <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ useEffect - Working</p>
+          <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ Inline Styles - Working</p>
+        </div>
+
+        <div style={{
+          margin: '20px 0',
+          padding: '15px',
+          background: '#e3f2fd',
+          borderRadius: '10px',
+          border: '2px solid #2196f3'
+        }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#1976d2' }}>State Test:</h3>
+          <p style={{ margin: '5px 0', color: '#1976d2' }}>Current State: <strong>{testState}</strong></p>
         </div>
         
         <button 
           onClick={() => {
             console.log('✅ Button clicked - React is working!');
-            alert('React is working perfectly! 🎉');
+            setTestState('Button Clicked! - ' + new Date().toLocaleTimeString());
+            alert('React is working perfectly! 🎉\nState updated successfully!');
           }}
           style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             border: 'none',
             color: 'white',
-            padding: '10px 20px',
-            borderRadius: '5px',
+            padding: '15px 30px',
+            borderRadius: '10px',
             cursor: 'pointer',
-            fontSize: '16px'
+            fontSize: '16px',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
           }}
         >
-          Test React Functionality
+          🚀 Test React Functionality
         </button>
-      </TestUI>
-    </AppContainer>
+
+        <div style={{
+          margin: '20px 0 0 0',
+          padding: '10px',
+          background: '#fff3cd',
+          borderRadius: '5px',
+          border: '1px solid #ffeaa7'
+        }}>
+          <p style={{ margin: 0, color: '#856404', fontSize: '14px' }}>
+            <strong>Debug Info:</strong> If you can see this text, React is rendering properly!
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: '14px'
+      }}>
+        <p style={{ margin: 0 }}>React Version: {React.version}</p>
+        <p style={{ margin: '5px 0 0 0' }}>Window Size: {window.innerWidth} x {window.innerHeight}</p>
+      </div>
+    </div>
   );
 }
 
