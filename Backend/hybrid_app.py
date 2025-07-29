@@ -30,9 +30,19 @@ def api_root():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    print(f"🌐 Serving request for path: '{path}'")
+    print(f"📁 Static folder: {app.static_folder}")
+    print(f"📁 Static folder exists: {os.path.exists(app.static_folder)}")
+    
+    if os.path.exists(app.static_folder):
+        static_files = os.listdir(app.static_folder)
+        print(f"📄 Static files available: {static_files}")
+    
     if path != "" and os.path.exists(app.static_folder + '/' + path):
+        print(f"✅ Serving static file: {path}")
         return send_from_directory(app.static_folder, path)
     else:
+        print(f"📄 Serving index.html for path: {path}")
         return send_from_directory(app.static_folder, 'index.html')
 
 # Try to import and add complex endpoints
