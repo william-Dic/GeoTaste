@@ -4,7 +4,7 @@ from openai import OpenAI
 from qloo_analysis import get_brands, get_places
 
 # Set up OpenAI client
-client = OpenAI()
+client = OpenAI(api_key="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")
 
 def analyze_business_environment(city_name, country_code, limit=50):
     """
