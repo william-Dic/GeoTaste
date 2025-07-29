@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import SearchBar from './components/SearchBar';
 
 // Add debugging
 console.log('🚀 App.jsx is loading...');
@@ -7,6 +8,7 @@ function App() {
   console.log('🎯 App component is rendering...');
   
   const [testState, setTestState] = useState('Initial State');
+  const [map, setMap] = useState(null);
 
   // Add useEffect for debugging
   useEffect(() => {
@@ -16,6 +18,16 @@ function App() {
     console.log('  - User agent:', navigator.userAgent);
     console.log('  - React version:', React.version);
   }, []);
+
+  const handleSearchStart = () => {
+    console.log('[App] 🔍 Search started');
+    setTestState('Search Started!');
+  };
+
+  const handleCitySearch = (cityName, countryCode, cityCenter) => {
+    console.log(`[App] 🏙️ City search: ${cityName}, ${countryCode}`);
+    setTestState(`Searching: ${cityName}, ${countryCode}`);
+  };
 
   console.log('🎨 App component is about to render JSX...');
   
@@ -61,6 +73,23 @@ function App() {
         </p>
       </div>
 
+      {/* SearchBar Component */}
+      <div style={{
+        position: 'absolute',
+        top: '100px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: '600px'
+      }}>
+        <SearchBar
+          map={map}
+          onCitySearch={handleCitySearch}
+          onSearchStart={handleSearchStart}
+        />
+      </div>
+
       {/* Main Content */}
       <div style={{
         background: 'rgba(255, 255, 255, 0.95)',
@@ -71,7 +100,8 @@ function App() {
         border: '1px solid rgba(255, 255, 255, 0.2)',
         maxWidth: '600px',
         width: '100%',
-        color: '#333'
+        color: '#333',
+        marginTop: '200px'
       }}>
         <h2 style={{
           margin: '0 0 20px 0',
@@ -93,6 +123,7 @@ function App() {
           <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ React State - Working</p>
           <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ useEffect - Working</p>
           <p style={{ margin: '5px 0', color: '#28a745', fontWeight: 'bold' }}>✅ Inline Styles - Working</p>
+          <p style={{ margin: '5px 0', color: '#ffc107', fontWeight: 'bold' }}>🔄 SearchBar - Testing...</p>
         </div>
 
         <div style={{
