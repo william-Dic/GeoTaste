@@ -56,8 +56,8 @@ echo "🔧 Environment variables:"\n\
 echo "PORT: $PORT"\n\
 echo "FLASK_APP: $FLASK_APP"\n\
 echo "FLASK_ENV: $FLASK_ENV"\n\
-echo "🌐 Starting Flask app..."\n\
-cd /app/Backend && python app.py\n\
+echo "🌐 Starting Hybrid Flask app..."\n\
+cd /app/Backend && python hybrid_app.py\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Use the startup script
