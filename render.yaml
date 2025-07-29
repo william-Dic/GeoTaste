@@ -2,8 +2,10 @@ services:
   - type: web
     name: geotaste
     env: python
+    plan: free
     buildCommand: |
-      pip install -r Backend/requirements.txt
+      python -m pip install --upgrade pip
+      pip install -r Backend/requirements-minimal.txt
       npm install
       npm run build
       mkdir -p Backend/static
