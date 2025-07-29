@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Plot from 'react-plotly.js';
 import { styled } from '@mui/material/styles';
 import { 
   Paper, 
@@ -29,6 +28,45 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import HotelIcon from '@mui/icons-material/Hotel';
 import AttractionsIcon from '@mui/icons-material/Attractions';
 import InfoIcon from '@mui/icons-material/Info';
+
+// Dynamic import for Plotly to avoid build issues
+let Plot = null;
+let Plotly = null;
+
+// Try to load Plotly dynamically
+const loadPlotly = async () => {
+  try {
+    const plotlyModule = await import('react-plotly.js');
+    Plot = plotlyModule.default;
+    Plotly = await import('plotly.js');
+    console.log('✅ Plotly loaded successfully');
+  } catch (error) {
+    console.error('❌ Failed to load Plotly:', error);
+    // Fallback: create a simple div for charts
+    Plot = ({ data, layout, config, ...props }) => (
+      <div 
+        style={{ 
+          width: '100%', 
+          height: '400px', 
+          backgroundColor: '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px dashed #ccc',
+          borderRadius: '8px'
+        }}
+        {...props}
+      >
+        <Typography variant="body2" color="textSecondary">
+          Chart loading... (Plotly temporarily unavailable)
+        </Typography>
+      </div>
+    );
+  }
+};
+
+// Load Plotly on component mount
+loadPlotly();
 
 const TabPanel = (props) => {
   const { children, value, index, ...other } = props;

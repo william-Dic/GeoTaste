@@ -16,18 +16,6 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-  resolve: {
-    alias: {
-      'buffer': 'buffer',
-      'process': 'process/browser',
-      'util': 'util',
-      'stream': 'stream-browserify',
-      'crypto': 'crypto-browserify',
-    }
-  },
-  optimizeDeps: {
-    include: ['buffer', 'process', 'util', 'stream-browserify', 'crypto-browserify']
-  },
   build: {
     outDir: 'dist',
     sourcemap: false,
@@ -36,8 +24,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           mui: ['@mui/material', '@mui/icons-material'],
-          mapbox: ['mapbox-gl'],
-          plotly: ['plotly.js', 'react-plotly.js']
+          mapbox: ['mapbox-gl']
         }
       }
     }
