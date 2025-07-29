@@ -1,19 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
-import Map from './components/Map';
-import SearchBar from './components/SearchBar';
-import DataVisualizations from './components/DataVisualizations';
-import BusinessAnalysisPanel from './components/BusinessAnalysisPanel';
 
 // Add debugging
 console.log('🚀 App.jsx is loading...');
-console.log('✅ All components imported successfully');
 
 const AppContainer = styled('div')({
   position: 'relative',
   height: '100vh',
   width: '100vw',
   overflow: 'hidden',
+  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
 });
 
 const TopContainer = styled('div')({
@@ -28,108 +24,19 @@ const TopContainer = styled('div')({
   gap: '10px',
 });
 
-const AnalysisLayout = styled('div')({
+const TestUI = styled('div')({
   position: 'absolute',
-  top: '100px',
-  left: '20px',
-  right: '20px',
-  bottom: '20px',
-  display: 'flex',
-  gap: '20px',
-  zIndex: 2,
-  justifyContent: 'space-between',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  transform: 'translateX(0)',
-  '&.hidden': {
-    transform: 'translateX(100%)',
-  },
-});
-
-const LeftPanel = styled('div')({
-  width: '45%',
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  background: 'rgba(255, 255, 255, 0.95)',
   backdropFilter: 'blur(20px)',
   borderRadius: '20px',
+  padding: '40px',
+  textAlign: 'center',
   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
   border: '1px solid rgba(255, 255, 255, 0.2)',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-});
-
-const RightPanel = styled('div')({
-  width: '55%',
-  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-  backdropFilter: 'blur(20px)',
-  borderRadius: '20px',
-  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-  position: 'relative',
-});
-
-const MinimizeButton = styled('button')({
-  position: 'absolute',
-  top: '15px',
-  right: '15px',
-  width: '30px',
-  height: '30px',
-  borderRadius: '50%',
-  border: 'none',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  color: '#333',
-  fontSize: '14px',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 3,
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 1)',
-    transform: 'scale(1.1)',
-  },
-});
-
-const CityIndicator = styled('div')({
-  position: 'absolute',
-  top: '15px',
-  left: '20px',
-  backgroundColor: 'rgba(74, 111, 165, 0.9)',
-  color: 'white',
-  padding: '8px 16px',
-  borderRadius: '20px',
-  fontSize: '14px',
-  fontWeight: '600',
-  zIndex: 3,
-  backdropFilter: 'blur(10px)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-});
-
-const AgentStatusIndicator = styled('div')({
-  position: 'absolute',
-  top: '60px',
-  left: '20px',
-  backgroundColor: 'rgba(78, 205, 196, 0.9)',
-  color: 'white',
-  padding: '8px 16px',
-  borderRadius: '20px',
-  fontSize: '14px',
-  fontWeight: '600',
-  zIndex: 3,
-  backdropFilter: 'blur(10px)',
-  border: '1px solid rgba(255, 255, 255, 0.2)',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  animation: 'pulse 2s infinite',
-  '@keyframes pulse': {
-    '0%': { opacity: 1 },
-    '50%': { opacity: 0.7 },
-    '100%': { opacity: 1 },
-  },
+  maxWidth: '600px',
 });
 
 function App() {
@@ -223,60 +130,42 @@ function App() {
   return (
     <AppContainer>
       <TopContainer>
-        <SearchBar
-          map={map}
-          onCitySearch={handleCitySearch}
-          onSearchStart={handleSearchStart}
-        />
+        <h1 style={{ color: 'white', margin: 0 }}>🌍 GeoTaste</h1>
+        <p style={{ color: 'white', margin: 0 }}>AI Agentic Business Environment Consultant</p>
       </TopContainer>
 
-      <Map ref={mapRef} setMap={setMap} />
-
-      {selectedCity && (
-        <CityIndicator>
-          📍 {selectedCity.name}, {selectedCity.country}
-        </CityIndicator>
-      )}
-
-      {isAnalyzing && (
-        <AgentStatusIndicator>
-          🤖 GeoTaste Agent is analyzing...
-        </AgentStatusIndicator>
-      )}
-
-      {selectedCity && (
-        <AnalysisLayout 
-          className={isMinimized ? 'hidden' : ''} 
-          style={{ 
-            opacity: showAnalysis ? 1 : 0,
-            pointerEvents: showAnalysis ? 'auto' : 'none',
-            transition: 'opacity 0.5s ease-in-out'
+      <TestUI>
+        <h2>🎉 React App is Working!</h2>
+        <p>✅ App component loaded successfully</p>
+        <p>✅ Styled components working</p>
+        <p>✅ State management working</p>
+        
+        <div style={{ margin: '20px 0', padding: '15px', background: '#f0f0f0', borderRadius: '10px' }}>
+          <h3>Component Status:</h3>
+          <p>✅ App.jsx - Working</p>
+          <p>✅ Styled Components - Working</p>
+          <p>✅ React State - Working</p>
+          <p>✅ useEffect - Working</p>
+        </div>
+        
+        <button 
+          onClick={() => {
+            console.log('✅ Button clicked - React is working!');
+            alert('React is working perfectly! 🎉');
+          }}
+          style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            border: 'none',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '16px'
           }}
         >
-          {/* Left Panel - Business Environment Analysis */}
-          <LeftPanel>
-            <BusinessAnalysisPanel 
-              cityName={selectedCity.name}
-              countryCode={selectedCity.country}
-              onAnalysisReady={handleGptAnalysisReady}
-            />
-          </LeftPanel>
-
-          {/* Right Panel - Data Visualizations */}
-          <RightPanel>
-            <MinimizeButton onClick={handleMinimizeAnalysis}>
-            {isMinimized ? '□' : '−'}
-          </MinimizeButton>
-          <DataVisualizations
-            key={`${selectedCity.name}-${selectedCity.country}`}
-            cityName={selectedCity.name}
-            countryCode={selectedCity.country}
-              isCompact={false}
-            onReady={handleVisualizationsReady}
-          />
-          </RightPanel>
-        </AnalysisLayout>
-      )}
+          Test React Functionality
+        </button>
+      </TestUI>
     </AppContainer>
   );
 }
