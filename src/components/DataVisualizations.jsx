@@ -33,43 +33,67 @@ import InfoIcon from '@mui/icons-material/Info';
 let Plot = null;
 let Plotly = null;
 
+// Simple fallback component
+const FallbackChart = ({ data, layout, config, ...props }) => (
+  <div 
+    style={{ 
+      width: '100%', 
+      height: '400px', 
+      backgroundColor: '#f5f5f5',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: '2px dashed #ccc',
+      borderRadius: '8px',
+      flexDirection: 'column',
+      gap: '8px'
+    }}
+    {...props}
+  >
+    <Typography variant="body2" color="textSecondary">
+      Chart loading... (Plotly temporarily unavailable)
+    </Typography>
+    <Typography variant="caption" color="textSecondary">
+      Retrying connection...
+    </Typography>
+  </div>
+);
+
+// Initialize with fallback
+Plot = FallbackChart;
+
 // Try to load Plotly dynamically
 const loadPlotly = async () => {
   try {
     console.log('🔄 Loading Plotly...');
+    
+    // Try loading from CDN first
+    if (typeof window !== 'undefined' && !window.Plotly) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.plot.ly/plotly-latest.min.js';
+      script.async = true;
+      
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      
+      // Wait a bit for Plotly to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // Now try to import react-plotly.js
     const plotlyModule = await import('react-plotly.js');
     Plot = plotlyModule.default;
-    const plotlyJs = await import('plotly.js');
-    Plotly = plotlyJs.default || plotlyJs;
+    Plotly = window.Plotly;
+    
     console.log('✅ Plotly loaded successfully');
     return true;
   } catch (error) {
     console.error('❌ Failed to load Plotly:', error);
-    // Fallback: create a simple div for charts
-    Plot = ({ data, layout, config, ...props }) => (
-      <div 
-        style={{ 
-          width: '100%', 
-          height: '400px', 
-          backgroundColor: '#f5f5f5',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px dashed #ccc',
-          borderRadius: '8px',
-          flexDirection: 'column',
-          gap: '8px'
-        }}
-        {...props}
-      >
-        <Typography variant="body2" color="textSecondary">
-          Chart loading... (Plotly temporarily unavailable)
-        </Typography>
-        <Typography variant="caption" color="textSecondary">
-          Retrying connection...
-        </Typography>
-      </div>
-    );
+    // Use the fallback component
+    Plot = FallbackChart;
     return false;
   }
 };
