@@ -41,8 +41,5 @@ ENV PORT=5000
 # Expose port
 EXPOSE 5000
 
-# Change to backend directory and start the application
-WORKDIR /app/Backend
-
-# Use exec form to ensure proper signal handling
-ENTRYPOINT ["python", "app.py"] 
+# Use shell command to change directory and run Python
+CMD ["bash", "-c", "cd /app/Backend && python app.py"] 
