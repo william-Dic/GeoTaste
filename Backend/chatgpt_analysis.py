@@ -145,39 +145,104 @@ def prepare_data_summary(brands, places, city_name, country_code):
 
 def create_analysis_prompt(data_summary, city_name, country_code):
     """
-    Create a comprehensive prompt for ChatGPT analysis
-    """
-    prompt = f"""
-    Please analyze the business environment of {city_name}, {country_code} based on the following data:
-
-    **Business Data Summary:**
-    - Total brands analyzed: {len(data_summary['brands'])}
-    - Total places analyzed: {len(data_summary['places'])}
-
-    **Top Business Categories:**
-    - Brand categories: {dict(list(data_summary['brand_categories'].items())[:5])}
-    - Place categories: {dict(list(data_summary['place_categories'].items())[:5])}
-
-    **Top Rated Places:**
-    {json.dumps(data_summary['top_rated_places'][:3], indent=2)}
-
-    **Most Popular Brands:**
-    {json.dumps(data_summary['popular_brands'][:3], indent=2)}
-
-    **Analysis Request:**
-    Please provide a comprehensive business environment analysis covering:
-
-    1. **Market Overview**: What type of business environment exists in {city_name}?
-    2. **Business Diversity**: How diverse is the business landscape?
-    3. **Quality Assessment**: What's the overall quality of businesses?
-    4. **Market Opportunities**: What business opportunities exist?
-    5. **Competitive Landscape**: How competitive is the market?
-    6. **Consumer Preferences**: What do the popular brands and top-rated places reveal about local preferences?
-
-    Please provide a clear, professional analysis that would be useful for business decision-makers considering this market. Keep the analysis concise but comprehensive (around 300-400 words).
+    Create a comprehensive prompt for ChatGPT analysis with improved system prompt
     """
     
+    # Format the data for better presentation
+    brand_categories_str = format_categories(data_summary['brand_categories'])
+    place_categories_str = format_categories(data_summary['place_categories'])
+    top_places_str = format_top_places(data_summary['top_rated_places'])
+    popular_brands_str = format_popular_brands(data_summary['popular_brands'])
+    
+    prompt = f"""You are a senior business analyst specializing in market intelligence and location-based business insights. Your role is to provide direct, actionable business analysis without any introductory phrases or AI assistant language.
+
+**BUSINESS ENVIRONMENT ANALYSIS BRIEF**
+
+**Location:** {city_name}, {country_code}
+**Data Scope:** {len(data_summary['brands'])} brands, {len(data_summary['places'])} businesses analyzed
+
+**MARKET DATA**
+
+**Brand Landscape:**
+{brand_categories_str}
+
+**Business Categories:**
+{place_categories_str}
+
+**Top Performing Businesses:**
+{top_places_str}
+
+**Market Leaders:**
+{popular_brands_str}
+
+**ANALYSIS REQUIREMENTS**
+
+Provide a structured business environment analysis in the following format:
+
+**MARKET OVERVIEW**
+[Direct analysis of the business environment type and characteristics]
+
+**BUSINESS DIVERSITY**
+[Assessment of market diversity and sector distribution]
+
+**QUALITY METRICS**
+[Evaluation of business quality based on ratings and performance]
+
+**OPPORTUNITY LANDSCAPE**
+[Identification of market gaps and business opportunities]
+
+**COMPETITIVE DYNAMICS**
+[Analysis of market competition and positioning]
+
+**CONSUMER INSIGHTS**
+[Key insights about local consumer preferences and behavior]
+
+**EXECUTIVE SUMMARY**
+[2-3 key takeaways for business decision-makers]
+
+Write in a professional, direct tone suitable for executive briefings. Avoid any conversational phrases, introductions, or AI assistant language. Focus on actionable insights and data-driven conclusions. Target length: 350-450 words.
+"""
+    
     return prompt
+
+def format_categories(categories_dict):
+    """Format categories for better presentation"""
+    if not categories_dict:
+        return "No category data available"
+    
+    sorted_categories = sorted(categories_dict.items(), key=lambda x: x[1], reverse=True)
+    formatted = []
+    for category, count in sorted_categories[:8]:
+        formatted.append(f"• {category}: {count} businesses")
+    
+    return "\n".join(formatted)
+
+def format_top_places(places):
+    """Format top rated places for better presentation"""
+    if not places:
+        return "No rating data available"
+    
+    formatted = []
+    for place in places[:3]:
+        rating = place.get('rating', 'N/A')
+        categories = ', '.join(place.get('categories', [])[:2])
+        formatted.append(f"• {place['name']} (Rating: {rating}, Categories: {categories})")
+    
+    return "\n".join(formatted)
+
+def format_popular_brands(brands):
+    """Format popular brands for better presentation"""
+    if not brands:
+        return "No brand data available"
+    
+    formatted = []
+    for brand in brands[:3]:
+        popularity = brand.get('popularity', 0)
+        popularity_pct = f"{popularity * 100:.1f}%" if popularity else "N/A"
+        categories = ', '.join(brand.get('categories', [])[:2])
+        formatted.append(f"• {brand['name']} (Popularity: {popularity_pct}, Categories: {categories})")
+    
+    return "\n".join(formatted)
 
 def get_chat_response(user_message, city_name, country_code):
     """
@@ -193,19 +258,15 @@ def get_chat_response(user_message, city_name, country_code):
                 "response": None
             }
         
-        # Create a context-aware response
-        context_prompt = f"""
-        You are a business analyst assistant for {city_name}, {country_code}. 
-        
-        **Business Environment Context:**
-        {analysis_result['analysis']}
-        
-        **User Question:** {user_message}
-        
-        Please provide a helpful response based on the business environment analysis above. 
-        If the user is asking about something not covered in the analysis, provide general business insights about {city_name}.
-        Keep your response conversational and informative (100-200 words).
-        """
+        # Create a context-aware response with improved prompt
+        context_prompt = f"""You are a business intelligence specialist for {city_name}, {country_code}. Provide direct, professional responses without AI assistant language.
+
+**BUSINESS CONTEXT:**
+{analysis_result['analysis']}
+
+**USER INQUIRY:** {user_message}
+
+Provide a concise, professional response (100-150 words) that directly addresses the user's question using the business analysis above. If the question is outside the analysis scope, provide relevant business insights about {city_name}. Write in a professional tone suitable for business communications."""
         
         response = client.responses.create(
             model="gpt-4.1",

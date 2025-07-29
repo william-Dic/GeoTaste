@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import json
 import time
+import random
 from collections import Counter
 import numpy as np
 from qloo_analysis import get_brands, get_places, format_brands_output, get_formatted_place_data
@@ -782,7 +783,6 @@ class QlooVisualizer:
         print(f"[Visualizer] Processing {len(entities)} place entities for geographic distribution")
         
         # Simulate geographic coordinates around the city center
-        import random
         random.seed(hash(city_name))  # Consistent results for same city
         
         places = []

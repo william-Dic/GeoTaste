@@ -9,12 +9,19 @@ import {
   Chip,
   IconButton,
   TextField,
-  Button
+  Button,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import SendIcon from '@mui/icons-material/Send';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import InsightsIcon from '@mui/icons-material/Insights';
 
 const PanelHeader = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -66,6 +73,29 @@ const MessageBubble = styled(Box)(({ isUser, theme }) => ({
   }
 }));
 
+const AnalysisAccordion = styled(Accordion)(({ theme }) => ({
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  borderRadius: '8px',
+  marginBottom: '8px',
+  '&:before': {
+    display: 'none',
+  },
+  '&.Mui-expanded': {
+    margin: '8px 0',
+  },
+}));
+
+const SectionHeader = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  padding: '12px 16px',
+  backgroundColor: 'rgba(102, 126, 234, 0.1)',
+  borderRadius: '8px',
+  marginBottom: '12px',
+  border: '1px solid rgba(102, 126, 234, 0.2)',
+}));
+
 const BusinessAnalysisPanel = ({ cityName, countryCode, onAnalysisReady }) => {
   const [analysis, setAnalysis] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,64 +130,26 @@ const BusinessAnalysisPanel = ({ cityName, countryCode, onAnalysisReady }) => {
         }),
       });
 
-      console.log(`[BusinessAnalysisPanel] 📥 Response status: ${response.status}`);
-      const data = await response.json();
-      console.log(`[BusinessAnalysisPanel] 📊 Response data:`, data);
+      const result = await response.json();
       
-      if (data.success && data.analysis) {
-        console.log(`[BusinessAnalysisPanel] ✅ Analysis successful, length: ${data.analysis.length}`);
-        setAnalysis(data.analysis);
-        // Add initial analysis to chat
-        setChatMessages([
-          {
-            id: 1,
-            type: 'assistant',
-            content: `🤖 **Business Environment Analysis for ${cityName}**\n\n${data.analysis}\n\n💡 You can ask me specific questions about the business environment, market opportunities, or any other business-related topics!`,
-            timestamp: new Date()
-          }
-        ]);
-        // Notify parent that analysis is ready
-        console.log(`[BusinessAnalysisPanel] 🔔 Calling onAnalysisReady callback`);
-        if (onAnalysisReady) {
-          onAnalysisReady();
-        } else {
-          console.log(`[BusinessAnalysisPanel] ⚠️ onAnalysisReady callback not provided`);
-        }
+      if (result.success) {
+        console.log(`[BusinessAnalysisPanel] ✅ Analysis received successfully`);
+        setAnalysis(result.analysis);
+        setChatMessages([{
+          id: Date.now(),
+          type: 'assistant',
+          content: `Business environment analysis for ${cityName}, ${countryCode} is now ready. You can ask me specific questions about the market, opportunities, or any other business insights.`,
+          timestamp: new Date()
+        }]);
+        onAnalysisReady();
       } else {
-        console.log(`[BusinessAnalysisPanel] ❌ Analysis failed:`, data.error);
-        setError(data.error || 'Failed to generate analysis');
-        setChatMessages([
-          {
-            id: 1,
-            type: 'assistant',
-            content: `Hello! I'm your business analyst assistant for ${cityName}. I can help you understand the local business environment, market opportunities, and provide insights based on the data we have. What would you like to know?`,
-            timestamp: new Date()
-          }
-        ]);
-        // Notify parent that analysis is ready (even if failed)
-        console.log(`[BusinessAnalysisPanel] 🔔 Calling onAnalysisReady callback (after error)`);
-        if (onAnalysisReady) {
-          onAnalysisReady();
-        }
+        console.error(`[BusinessAnalysisPanel] ❌ Analysis failed:`, result.error);
+        setError(result.error || 'Failed to generate analysis');
       }
     } catch (error) {
-      console.error('[BusinessAnalysisPanel] 💥 Error generating analysis:', error);
-      setError('Failed to connect to analysis service');
-      setChatMessages([
-        {
-          id: 1,
-          type: 'assistant',
-          content: `Hello! I'm your business analyst assistant for ${cityName}. I can help you understand the local business environment, market opportunities, and provide insights based on the data we have. What would you like to know?`,
-          timestamp: new Date()
-        }
-      ]);
-      // Notify parent that analysis is ready (even if failed)
-      console.log(`[BusinessAnalysisPanel] 🔔 Calling onAnalysisReady callback (after exception)`);
-      if (onAnalysisReady) {
-        onAnalysisReady();
-      }
+      console.error(`[BusinessAnalysisPanel] 💥 Exception:`, error);
+      setError('Network error occurred while generating analysis');
     } finally {
-      console.log(`[BusinessAnalysisPanel] 🏁 Analysis generation completed`);
       setIsLoading(false);
     }
   };
@@ -189,13 +181,13 @@ const BusinessAnalysisPanel = ({ cityName, countryCode, onAnalysisReady }) => {
         }),
       });
 
-      const data = await response.json();
-      
-      if (data.success && data.response) {
+      const result = await response.json();
+
+      if (result.success) {
         const assistantMessage = {
           id: Date.now() + 1,
           type: 'assistant',
-          content: data.response,
+          content: result.response,
           timestamp: new Date()
         };
         setChatMessages(prev => [...prev, assistantMessage]);
@@ -228,6 +220,60 @@ const BusinessAnalysisPanel = ({ cityName, countryCode, onAnalysisReady }) => {
       sendChatMessage();
     }
   };
+
+  const parseAnalysisSections = (analysisText) => {
+    if (!analysisText) return [];
+    
+    const sections = [];
+    const lines = analysisText.split('\n');
+    let currentSection = null;
+    let currentContent = [];
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Check for section headers (bold text with **)
+      if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
+        // Save previous section if exists
+        if (currentSection) {
+          sections.push({
+            title: currentSection,
+            content: currentContent.join('\n').trim()
+          });
+        }
+        
+        // Start new section
+        currentSection = trimmedLine.replace(/\*\*/g, '');
+        currentContent = [];
+      } else if (currentSection && trimmedLine) {
+        currentContent.push(line);
+      }
+    }
+    
+    // Add the last section
+    if (currentSection) {
+      sections.push({
+        title: currentSection,
+        content: currentContent.join('\n').trim()
+      });
+    }
+    
+    return sections;
+  };
+
+  const getSectionIcon = (sectionTitle) => {
+    const title = sectionTitle.toLowerCase();
+    if (title.includes('market overview')) return <AssessmentIcon />;
+    if (title.includes('diversity')) return <TrendingUpIcon />;
+    if (title.includes('quality')) return <BusinessIcon />;
+    if (title.includes('opportunity')) return <InsightsIcon />;
+    if (title.includes('competitive')) return <SmartToyIcon />;
+    if (title.includes('consumer')) return <TrendingUpIcon />;
+    if (title.includes('executive')) return <AssessmentIcon />;
+    return <BusinessIcon />;
+  };
+
+  const analysisSections = parseAnalysisSections(analysis);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -277,22 +323,52 @@ const BusinessAnalysisPanel = ({ cityName, countryCode, onAnalysisReady }) => {
           <>
             {/* Main Analysis */}
             <AnalysisSection>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <SectionHeader>
                 <SmartToyIcon sx={{ color: '#667eea' }} />
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#26324B' }}>
-                  Business Environment Overview
+                  Business Environment Analysis
                 </Typography>
-              </Box>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  lineHeight: 1.7,
-                  whiteSpace: 'pre-line',
-                  '& strong': { fontWeight: 600 }
-                }}
-              >
-                {analysis}
-              </Typography>
+              </SectionHeader>
+              
+              {analysisSections.length > 0 ? (
+                <Box>
+                  {analysisSections.map((section, index) => (
+                    <AnalysisAccordion key={index} defaultExpanded={index < 2}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {getSectionIcon(section.title)}
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                            {section.title}
+                          </Typography>
+                        </Box>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            lineHeight: 1.6,
+                            color: '#374151',
+                            '& strong': { fontWeight: 600, color: '#1f2937' }
+                          }}
+                        >
+                          {section.content}
+                        </Typography>
+                      </AccordionDetails>
+                    </AnalysisAccordion>
+                  ))}
+                </Box>
+              ) : (
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    lineHeight: 1.7,
+                    whiteSpace: 'pre-line',
+                    '& strong': { fontWeight: 600 }
+                  }}
+                >
+                  {analysis}
+                </Typography>
+              )}
             </AnalysisSection>
 
             {/* Interactive Chat */}
