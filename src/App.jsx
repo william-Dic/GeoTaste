@@ -1,12 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
-import Map from './components/Map';
-import SearchBar from './components/SearchBar';
-import DataVisualizations from './components/DataVisualizations';
-import BusinessAnalysisPanel from './components/BusinessAnalysisPanel';
 
 // Add debugging
 console.log('🚀 App.jsx is loading...');
+
+// Progressive component loading
+let Map = null;
+let SearchBar = null;
+let DataVisualizations = null;
+let BusinessAnalysisPanel = null;
+
+try {
+  console.log('🔍 Loading Map component...');
+  Map = require('./components/Map').default;
+  console.log('✅ Map component loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load Map component:', error);
+}
+
+try {
+  console.log('🔍 Loading SearchBar component...');
+  SearchBar = require('./components/SearchBar').default;
+  console.log('✅ SearchBar component loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load SearchBar component:', error);
+}
+
+try {
+  console.log('🔍 Loading DataVisualizations component...');
+  DataVisualizations = require('./components/DataVisualizations').default;
+  console.log('✅ DataVisualizations component loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load DataVisualizations component:', error);
+}
+
+try {
+  console.log('🔍 Loading BusinessAnalysisPanel component...');
+  BusinessAnalysisPanel = require('./components/BusinessAnalysisPanel').default;
+  console.log('✅ BusinessAnalysisPanel component loaded successfully');
+} catch (error) {
+  console.error('❌ Failed to load BusinessAnalysisPanel component:', error);
+}
 
 const AppContainer = styled('div')({
   position: 'relative',
@@ -218,6 +252,52 @@ function App() {
   };
 
   console.log('🎨 App component is about to render JSX...');
+  
+  // Check if all components loaded
+  const componentsLoaded = Map && SearchBar && DataVisualizations && BusinessAnalysisPanel;
+  
+  if (!componentsLoaded) {
+    console.log('⚠️ Some components failed to load, showing fallback UI');
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Arial, sans-serif',
+        color: 'white'
+      }}>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          padding: '40px',
+          borderRadius: '20px',
+          backdropFilter: 'blur(10px)',
+          textAlign: 'center',
+          maxWidth: '600px'
+        }}>
+          <h1>🌍 GeoTaste - Component Loading Issue</h1>
+          <p>Some components failed to load. Check browser console for details.</p>
+          
+          <div style={{
+            margin: '20px 0',
+            padding: '15px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '10px',
+            textAlign: 'left'
+          }}>
+            <h3>Component Status:</h3>
+            <p>Map: {Map ? '✅ Loaded' : '❌ Failed'}</p>
+            <p>SearchBar: {SearchBar ? '✅ Loaded' : '❌ Failed'}</p>
+            <p>DataVisualizations: {DataVisualizations ? '✅ Loaded' : '❌ Failed'}</p>
+            <p>BusinessAnalysisPanel: {BusinessAnalysisPanel ? '✅ Loaded' : '❌ Failed'}</p>
+          </div>
+          
+          <p>Please check the browser console (F12) for detailed error messages.</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <AppContainer>
