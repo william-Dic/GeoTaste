@@ -43,4 +43,6 @@ EXPOSE 5000
 
 # Change to backend directory and start the application
 WORKDIR /app/Backend
-CMD ["python", "app.py"] 
+
+# Use exec form to ensure proper signal handling
+ENTRYPOINT ["python", "app.py"] 
