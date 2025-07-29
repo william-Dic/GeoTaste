@@ -3,9 +3,28 @@ from flask_cors import CORS
 import json
 import os
 import uuid
-from visualizations import QlooVisualizer
-from chatgpt_analysis import analyze_business_environment, get_chat_response
 import sys
+
+# Test imports one by one to identify issues
+print("🔍 Testing imports...")
+
+try:
+    print("📊 Testing visualizations import...")
+    from visualizations import QlooVisualizer
+    print("✅ QlooVisualizer imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import QlooVisualizer: {e}")
+    sys.exit(1)
+
+try:
+    print("🤖 Testing chatgpt_analysis import...")
+    from chatgpt_analysis import analyze_business_environment, get_chat_response
+    print("✅ chatgpt_analysis imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import chatgpt_analysis: {e}")
+    sys.exit(1)
+
+print("✅ All imports successful!")
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app, origins=["*"])  # Enable CORS for all origins in production
