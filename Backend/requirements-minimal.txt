@@ -4,4 +4,6 @@ requests
 pandas
 numpy
 plotly
-openai 
+openai
+matplotlib
+seaborn 

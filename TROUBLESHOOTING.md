@@ -2,13 +2,22 @@
 
 ## 🚨 Common Issues & Solutions
 
-### Issue 1: setuptools.build_meta Error
+### Issue 1: ModuleNotFoundError: No module named 'matplotlib'
+
+**Error:** `ModuleNotFoundError: No module named 'matplotlib'`
+
+**Solution:** 
+1. Use the production requirements file: `Backend/requirements-production.txt`
+2. This file includes all necessary dependencies: matplotlib, seaborn, plotly, etc.
+3. Updated `render.yaml` to use production requirements
+
+### Issue 2: setuptools.build_meta Error
 
 **Error:** `Cannot import 'setuptools.build_meta'`
 
 **Solution:** 
-1. Use the minimal requirements file: `Backend/requirements-minimal.txt`
-2. Updated `render.yaml` to use minimal dependencies
+1. Use the production requirements file: `Backend/requirements-production.txt`
+2. Updated `render.yaml` to use production dependencies
 3. If still failing, try these steps in Render dashboard:
 
 **Manual Fix in Render:**
@@ -19,7 +28,7 @@
    - **Value:** `false`
 4. Redeploy the service
 
-### Issue 2: Python Version Conflicts
+### Issue 3: Python Version Conflicts
 
 **Error:** Python version not compatible
 
@@ -28,7 +37,7 @@
 2. In Render dashboard, ensure Python 3.11 is selected
 3. If needed, manually set Python version in service settings
 
-### Issue 3: Build Command Fails
+### Issue 4: Build Command Fails
 
 **Error:** Build command execution failed
 
@@ -39,14 +48,14 @@
 
 ```bash
 pip install --upgrade pip setuptools wheel
-pip install -r Backend/requirements-minimal.txt
+pip install -r Backend/requirements-production.txt
 npm install
 npm run build
 mkdir -p Backend/static
 cp -r dist/* Backend/static/
 ```
 
-### Issue 4: Environment Variables Not Set
+### Issue 5: Environment Variables Not Set
 
 **Error:** API calls failing
 
@@ -58,7 +67,7 @@ cp -r dist/* Backend/static/
    - `MAPBOX_ACCESS_TOKEN`
 3. Redeploy after adding variables
 
-### Issue 5: Frontend Not Loading
+### Issue 6: Frontend Not Loading
 
 **Error:** White screen or 404 errors
 
@@ -77,7 +86,7 @@ cp -r dist/* Backend/static/
    - **Environment:** Python 3
    - **Build Command:** 
      ```bash
-     pip install -r Backend/requirements-minimal.txt && npm install && npm run build && mkdir -p Backend/static && cp -r dist/* Backend/static/
+     pip install -r Backend/requirements-production.txt && npm install && npm run build && mkdir -p Backend/static && cp -r dist/* Backend/static/
      ```
    - **Start Command:** `cd Backend && python app.py`
 
@@ -90,7 +99,7 @@ cp -r dist/* Backend/static/
 
 **Backend on Render:**
 1. Deploy only the Backend folder to Render
-2. Use `Backend/requirements-minimal.txt`
+2. Use `Backend/requirements-production.txt`
 3. Start command: `python app.py`
 
 ### Method 3: Local Testing First
@@ -112,7 +121,7 @@ python app.py
 
 ## 🎯 Quick Fix Checklist
 
-- [ ] Use `requirements-minimal.txt` instead of `requirements.txt`
+- [ ] Use `requirements-production.txt` for all dependencies
 - [ ] Check Python version is 3.11.7
 - [ ] Verify all environment variables are set
 - [ ] Test build command locally first
@@ -120,4 +129,4 @@ python app.py
 
 ---
 
-**Most issues can be resolved by using the minimal requirements file! 🚀** 
+**Most issues can be resolved by using the production requirements file! 🚀** 
