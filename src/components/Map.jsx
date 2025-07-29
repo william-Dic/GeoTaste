@@ -119,7 +119,7 @@ const Map = forwardRef(({ setMap }, ref) => {
       map.flyTo({
         center: targetPoint,
         zoom: 13 + Math.random() * 2, // Random zoom between 13-15
-        duration: 1500, // Slightly slower for better readability
+        duration: 1200, // Slightly slower for better readability
         essential: true,
       });
 
@@ -220,7 +220,7 @@ const Map = forwardRef(({ setMap }, ref) => {
 
     // Start the animation
     animate();
-    const interval = setInterval(animate, 1800); // Move every 1.8 seconds
+    const interval = setInterval(animate, 1200); // Move every 1.8 seconds
     setAnalysisAnimation(interval);
 
     // Return cleanup function
